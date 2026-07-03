@@ -494,6 +494,13 @@
 
   .notice { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: center; margin-top: 16px; letter-spacing: 0.06em; }
 
+  /* buildversie, rechtsonder op home */
+  .build {
+    margin-top: auto; padding-top: 16px; text-align: right;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+    color: var(--muted); opacity: 0.75;
+  }
+
   /* zwevende stofjes op de achtergrond */
   #dust { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
   @media (prefers-reduced-motion: reduce) { #dust { display: none; } }
@@ -560,6 +567,8 @@
         <button data-mode="classic" class="on" role="radio">Classic</button>
         <button data-mode="fragile" role="radio">Porselein</button>
       </div>
+
+      <div class="build" id="buildTag"></div>
     </div>
   </section>
 
@@ -870,6 +879,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
+  const BUILD = "v0.9.0";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://fluxpuzzel.app";   /* placeholder tot er een echte store-link is */
   const TARGET = 0;
   const glyphs = ["▲","●","■"];
@@ -900,6 +910,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   };
 
   document.title = GAME_NAME;
+  $("buildTag").textContent = BUILD;
   $("wordmark").innerHTML = GAME_NAME + '<span class="dot">.</span>';
   document.querySelectorAll(".wm2").forEach(el => el.innerHTML = GAME_NAME + '<span class="dot">.</span>');
 
@@ -1316,9 +1327,16 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     bumpAttempts();
     state = start.slice();
     cracks = new Array(state.length).fill(0);
-    hintsUsed = 0; clearHint();
+    clearHint();
     moves = 0; movesEl.textContent = "00";
-    resetTimer(); renderAll(); hideWin(); hideGameover();
+    if (ctx && ctx.type === "daily"){
+      /* daily: bord opnieuw, maar de klok loopt gewoon door (en hints blijven geteld) */
+      saveProg();
+    } else {
+      hintsUsed = 0;
+      resetTimer();
+    }
+    renderAll(); hideWin(); hideGameover();
   }
 
   /* ================= win ================= */
