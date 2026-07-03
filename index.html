@@ -941,7 +941,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.0.0";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.0.1";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1533,7 +1533,10 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     $(id).classList.add("show");
     $("backdrop").classList.add("show");
     if (id === "help") startDemo();
-    if (id === "connect") loadFriendList();
+    if (id === "connect"){
+      if (session && !myCode) loadProfile().then(renderAuth);   /* code alsnog ophalen indien nodig */
+      loadFriendList();
+    }
   }
   function closeSheets(){
     ["help","connect"].forEach(i => $(i).classList.remove("show"));
@@ -1581,7 +1584,16 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= backend: Supabase (auth, profiel, sync) ================= */
   let sb = null, session = null, myProfile = null;
-  try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){ sb = null; }
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,        /* sessie bewaren in localStorage */
+        autoRefreshToken: true,      /* token stil vernieuwen zodat je ingelogd blijft */
+        detectSessionInUrl: true,
+        storageKey: "flux-auth"      /* vaste sleutel, blijft gelijk over versies */
+      }
+    });
+  } catch(e){ sb = null; }
 
   function login(){
     if (!sb) return;
@@ -1592,10 +1604,13 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function renderAuth(){
     const box = $("authBox");
     if (!sb){ box.innerHTML = ""; return; }
-    if (session && myProfile){
-      /* ingelogd: alles naar de topbar, scherm vrij voor de ranglijst */
+    if (session){
+      /* ingelogd zodra er een sessie is; profiel (naam/code) mag later binnenkomen
+         zonder dat je zolang als uitgelogd verschijnt */
       box.innerHTML = ""; box.style.display = "none";
-      $("userName").textContent = (myProfile.name || "").split(" ")[0];
+      const meta = (session.user && session.user.user_metadata) || {};
+      const fallback = (meta.name || meta.full_name || (session.user && session.user.email) || "").split(" ")[0].split("@")[0];
+      $("userName").textContent = (myProfile && myProfile.name ? myProfile.name : fallback).split(" ")[0];
       $("logoutIcon").style.display = "";
       $("addFriendBtn").style.display = "";
     } else {
@@ -1617,7 +1632,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   async function loadProfile(){
     if (!(sb && session)) return;
-    for (let attempt = 0; attempt < 3; attempt++){
+    for (let attempt = 0; attempt < 5; attempt++){
       const { data } = await sb.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
       if (data){ myProfile = data; myCode = data.code; return; }
       await new Promise(r => setTimeout(r, 900));   /* trigger kan net na signup nog bezig zijn */
@@ -1691,16 +1706,23 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     } catch(e){ /* offline: lokaal resultaat blijft staan */ }
   }
 
+  async function applySession(s){
+    session = s;
+    myProfile = null; myCode = null;
+    renderAuth();                 /* meteen ingelogd tonen op basis van de sessie */
+    refreshRanking();
+    if (s){
+      await loadProfile();
+      renderAuth();               /* naam + vriendencode invullen zodra profiel binnen is */
+      await syncFromServer();
+    }
+    refreshVandaag();
+  }
+
   if (sb){
-    sb.auth.onAuthStateChange(async (_ev, s) => {
-      session = s;
-      myProfile = null; myCode = null;
-      if (s) await loadProfile();
-      renderAuth();
-      refreshRanking();
-      if (s) await syncFromServer();
-      refreshVandaag();
-    });
+    sb.auth.onAuthStateChange((_ev, s) => { applySession(s); });
+    /* bij het openen de bewaarde sessie meteen herstellen (belt-and-suspenders naast INITIAL_SESSION) */
+    sb.auth.getSession().then(({ data }) => { if (data && data.session && !session) applySession(data.session); });
   }
 
   setMode(mode);
