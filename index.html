@@ -474,12 +474,11 @@
     60%  { transform: scale(1.06); }
     100% { transform: scale(1); }
   }
-  .tile.nflip { z-index: 7; animation: nflip 0.48s cubic-bezier(0.45,0,0.3,1); }
+  .tile.nflip { z-index: 7; animation: nflip 0.32s cubic-bezier(0.45,0.05,0.4,1); }
   @keyframes nflip {
-    0%   { transform: perspective(560px) rotateY(0); }
-    46%  { transform: perspective(560px) rotateY(87deg); filter: brightness(1.4); }
-    56%  { filter: brightness(1.4); }
-    100% { transform: perspective(560px) rotateY(0); filter: brightness(1); }
+    0%   { transform: perspective(620px) rotateY(0deg); }
+    50%  { transform: perspective(620px) rotateY(90deg); }
+    100% { transform: perspective(620px) rotateY(0deg); }
   }
 
   /* ================= Numbers-modus: genummerde tegels, groen (aan) / rood (uit) ================= */
@@ -1119,7 +1118,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.7.1";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.7.2";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1711,9 +1710,9 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     if (animate){
       void t.offsetWidth;
       if (isNumbers()){
-        /* Numbers: aangetikte tegel = knop-indruk (ntap), partners = omschakel-flip (nflip) */
-        t.classList.add(isSource ? "ntap" : "nflip");
-        setTimeout(()=>t.classList.remove("ntap","nflip"), 520);
+        /* Numbers: aangetikte tegel = knop-indruk (bron); partners flippen via flipPartner() */
+        t.classList.add("ntap");
+        setTimeout(()=>t.classList.remove("ntap"), 460);
       } else {
         t.classList.add(isSource ? "pop" : "ripple");
         setTimeout(()=>t.classList.remove("pop","ripple"), 480);
@@ -1721,6 +1720,22 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     }
   }
   function renderAll(){ for(let i=0;i<state.length;i++) paint(i,false,false); }
+
+  /* Numbers-partner: snappy kaart-flip ter plaatse; de kleur wisselt op het kantelpunt (90°),
+     zodat het lijkt alsof het kaartje echt omgedraaid wordt. */
+  function flipPartner(j){
+    const t = tiles[j];
+    const newOn = state[j] === 1;                 /* state is al getoggled */
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+      paint(j, false, false); return;
+    }
+    t.className = "tile ntile " + (newOn ? "off" : "on");   /* toon eerst de OUDE kleur */
+    const w = t.querySelector(".wire"); if (w) w.innerHTML = nLink[j].map(x => "<span>" + (x+1) + "</span>").join("");
+    void t.offsetWidth;
+    t.classList.add("nflip");
+    setTimeout(()=>{ t.classList.remove("on","off"); t.classList.add(newOn ? "on" : "off"); }, 150);
+    setTimeout(()=>t.classList.remove("nflip"), 340);
+  }
 
   function entrance(){
     tiles.forEach((t,i)=>{
@@ -1751,7 +1766,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     if (isNumbers()){
       for (const j of nLink[i]) state[j] ^= 1;
       paint(i, true, true);                        /* aangetikte tegel: knop-indruk (bron) */
-      nLink[i].forEach(j => paint(j, true, false)); /* partners: omschakel-flip */
+      nLink[i].forEach(j => flipPartner(j));       /* partners: kaart-flip ter plaatse */
       moves++; movesEl.textContent = pad(moves);
       haptic(8); playTick();
       if (state.every(v => v === 1)) showWin();
