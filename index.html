@@ -406,6 +406,10 @@
   .icon.symtog i { background: var(--muted); transition: background 0.18s ease; }
   .icon.symtog.on { background: var(--c0); border-color: rgba(255,255,255,0.4); }
   .icon.symtog.on i { background: #fff; }
+  /* oog: open wanneer verborgen (tik om te tonen) → dicht wanneer getoond (tik om te verbergen) */
+  .icon.eye .eye-closed { display: none; }
+  .icon.eye.on .eye-open { display: none; }
+  .icon.eye.on .eye-closed { display: block; }
   .gametop .mode { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
   .gametop .modesub { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
 
@@ -499,17 +503,17 @@
   }
   .board.n4 .tile .num { font-size: clamp(13px, 5vw, 22px); }
   .board.n5 .tile .num { font-size: clamp(11px, 4vw, 18px); }
-  /* bedrading als leesbare pill onderaan de tegel, altijd op één lijn */
+  /* bedrading groot over de hele tegel, goed leesbaar */
   .tile .wire {
-    position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
-    z-index: 4; display: none; white-space: nowrap; pointer-events: none;
-    background: rgba(20,16,10,0.58); color: #fff; border-radius: 20px; padding: 2px 7px;
-    font-family: var(--mono); font-weight: 700; font-size: 9px; letter-spacing: 0.02em; line-height: 1.35;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    position: absolute; inset: 0; z-index: 4; display: none; pointer-events: none;
+    align-items: center; justify-content: center; text-align: center; border-radius: inherit;
+    background: rgba(20,16,10,0.60); color: #fff; padding: 0 4px;
+    font-family: var(--mono); font-weight: 700; letter-spacing: 0.01em;
+    font-size: clamp(15px, 6.5vw, 26px);
   }
-  .board.reveal .tile .wire { display: block; }
-  .board.n4 .tile .wire { font-size: 8px; padding: 1px 6px; }
-  .board.n5 .tile .wire { font-size: 7px; padding: 1px 5px; bottom: 4px; }
+  .board.reveal .tile .wire { display: flex; }
+  .board.n4 .tile .wire { font-size: clamp(12px, 5vw, 20px); }
+  .board.n5 .tile .wire { font-size: clamp(10px, 4vw, 15px); }
 
   .status { display: flex; align-items: center; justify-content: center; gap: 26px; margin-top: 30px; }
   .stat { text-align: center; min-width: 62px; }
@@ -763,7 +767,8 @@
       </div>
       <div class="gt-right">
         <button class="icon eye" id="eyeBtn" aria-label="Reveal wiring" title="Reveal wiring" style="display:none">
-          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-open" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-closed" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.68"/><path d="M6.6 6.61A13.5 13.5 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.39-1.61"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
         </button>
         <button class="icon symtog" id="symBtn" aria-label="Show symbols" aria-pressed="false" title="Symbols on/off">
           <i></i><i></i><i></i>
@@ -1067,7 +1072,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.4.2";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.4.3";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1523,7 +1528,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     t.style.visibility = "";   /* herstel na een eerdere breuk */
     if (isNumbers()){
       t.className = "tile ntile " + (state[i] ? "on" : "off");
-      const w = t.querySelector(".wire"); if (w) w.textContent = nLink[i].map(j => j+1).join(" · ");
+      const w = t.querySelector(".wire"); if (w) w.textContent = nLink[i].map(j => j+1).join("·");
     } else {
       let cls = "tile s"+state[i];
       if (fragileActive() && cracks[i] > 0) cls += " c" + Math.min(cracks[i], 2);
