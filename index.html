@@ -263,6 +263,9 @@
     flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
     padding-bottom: calc(152px + env(safe-area-inset-bottom));
   }
+  /* scrollbalk verbergen (scrollen blijft werken) */
+  .screen, #scr-vrienden .content { scrollbar-width: none; -ms-overflow-style: none; }
+  .screen::-webkit-scrollbar, #scr-vrienden .content::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
   /* ontkoppelen per rij: subtiel break-link icoon → bevestigen (Ontkoppelen + annuleren) */
   .frow .unlinkbtn {
@@ -1079,7 +1082,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.4.7";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.4.8";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
