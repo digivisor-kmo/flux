@@ -1,7 +1,7 @@
 {
   "name": "FLUX",
   "short_name": "FLUX",
-  "description": "Breng het veld naar één kleur. Elke dag een nieuwe puzzel.",
+  "description": "Bring the board to a single color. A new puzzle every day.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

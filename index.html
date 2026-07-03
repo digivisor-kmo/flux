@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -650,12 +650,12 @@
   <section class="screen" id="scr-vandaag">
     <div class="topbar">
       <div class="wordmark" id="wordmark"></div>
-      <span class="streak"><span class="flame">◆</span> <span id="streakN">0</span> dagen</span>
+      <span class="streak"><span class="flame">◆</span> <span id="streakN">0</span> days</span>
     </div>
 
     <div class="content">
       <div class="dailyhero" id="dailyHero"></div>
-      <div class="notice">Nieuwe daily om middernacht · zelfde puzzel voor iedereen</div>
+      <div class="notice">New daily at midnight · same puzzle for everyone</div>
     </div>
   </section>
 
@@ -663,16 +663,16 @@
   <section class="screen active" id="scr-spelen">
     <div class="topbar">
       <div class="wordmark wm2"></div>
-      <button class="icon" id="helpBtn" aria-label="Uitleg">?</button>
+      <button class="icon" id="helpBtn" aria-label="Help">?</button>
     </div>
 
     <div class="content">
       <div id="freeCards" style="margin-top:24px"></div>
 
-      <div class="modetoggle" id="modeToggle" role="radiogroup" aria-label="Spelmodus">
+      <div class="modetoggle" id="modeToggle" role="radiogroup" aria-label="Game mode">
         <span class="thumb"></span>
         <button data-mode="classic" class="on" role="radio">Classic</button>
-        <button data-mode="fragile" role="radio">Porselein</button>
+        <button data-mode="fragile" role="radio">Porcelain</button>
       </div>
 
       <div class="build" id="buildTag"></div>
@@ -685,14 +685,14 @@
       <div class="wordmark wm2"></div>
       <div class="tbgroup">
         <span class="tbname" id="userName"></span>
-        <button class="icon" id="logoutIcon" aria-label="Uitloggen" style="display:none">
+        <button class="icon" id="logoutIcon" aria-label="Log out" style="display:none">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><path d="M17 8l4 4-4 4"/><path d="M21 12H10"/></svg>
         </button>
       </div>
     </div>
     <div class="content">
-      <div class="h1">Vrienden</div>
-      <div class="sub">Speel tegen wie je kent</div>
+      <div class="h1">Friends</div>
+      <div class="sub">Play against people you know</div>
 
       <div id="authBox" style="margin-top:20px"></div>
 
@@ -700,9 +700,9 @@
         <span class="k">Ranglijst · Daily Sprint</span>
         <div id="ranking" style="margin-top:6px"></div>
       </div>
-      <div class="notice" id="rankNotice">Eerst wie het dichtst bij par speelt · dan de snelste tijd</div>
+      <div class="notice" id="rankNotice">Closest to par ranks first · then the fastest time</div>
     </div>
-    <button class="fab" id="addFriendFab" aria-label="Vriend toevoegen" title="Vriend toevoegen" style="display:none">
+    <button class="fab" id="addFriendFab" aria-label="Add friend" title="Add friend" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="9" cy="8" r="3.6"/>
         <path d="M3 20c.7-3.4 3.2-5.4 6-5.4s5.3 2 6 5.4"/>
@@ -714,13 +714,13 @@
   <!-- ============ GAME ============ -->
   <section class="screen game" id="scr-game">
     <div class="gametop">
-      <button class="icon" id="backBtn" aria-label="Terug">←</button>
+      <button class="icon" id="backBtn" aria-label="Back">←</button>
       <div class="mid">
-        <div class="mode" id="gMode">Vrij spel</div>
+        <div class="mode" id="gMode">Free play</div>
         <div class="modesub" id="gModeSub">Starter</div>
       </div>
       <div class="gt-right">
-        <button class="icon symtog" id="symBtn" aria-label="Symbolen tonen" aria-pressed="false" title="Symbolen aan/uit">
+        <button class="icon symtog" id="symBtn" aria-label="Show symbols" aria-pressed="false" title="Symbols on/off">
           <i></i><i></i><i></i>
         </button>
         <button class="icon lamp" id="hintIconBtn" aria-label="Hint">
@@ -733,7 +733,7 @@
     </div>
 
     <div class="goalline">
-      <span class="t">Naar één kleur</span>
+      <span class="t">Make it one color</span>
       <span class="sw"></span>
     </div>
 
@@ -752,8 +752,8 @@
     </div>
 
     <div class="foot">
-      <button class="textbtn" id="resetBtn">Opnieuw</button>
-      <button class="textbtn" id="newBtn">Nieuwe puzzel</button>
+      <button class="textbtn" id="resetBtn">Restart</button>
+      <button class="textbtn" id="newBtn">New puzzle</button>
     </div>
   </section>
 
@@ -762,13 +762,13 @@
 <!-- tab-bar: enkel iconen -->
 <nav class="tabbar" id="tabbar">
   <span class="ind" id="tabInd"></span>
-  <button data-tab="spelen" class="on" aria-label="Spelen">
+  <button data-tab="spelen" class="on" aria-label="Play">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>
   </button>
   <button data-tab="vandaag" aria-label="Daily">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a1 1 0 0 0-1 1c0 2.5 1.5 4 4 4.3"/><path d="M17 6h3a1 1 0 0 1 1 1c0 2.5-1.5 4-4 4.3"/></svg>
   </button>
-  <button data-tab="vrienden" aria-label="Vrienden">
+  <button data-tab="vrienden" aria-label="Friends">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.7-3.5 3.3-5.5 6.5-5.5s5.8 2 6.5 5.5"/><circle cx="17.5" cy="9" r="2.8"/><path d="M16.5 14.6c2.8.2 4.6 2 5 4.9"/></svg>
   </button>
 </nav>
@@ -781,22 +781,22 @@
 
 <!-- game-over-sheet (Porselein) -->
 <div class="win sheet" id="gameover" role="dialog" aria-labelledby="goTitle">
-  <h3 id="goTitle">Gebroken!</h3>
-  <p>Porselein verdraagt maar twee tikken per tegel. De derde was er te veel aan.</p>
+  <h3 id="goTitle">Broken!</h3>
+  <p>Porcelain only takes two taps per tile. The third one was one too many.</p>
   <div class="actions">
-    <button class="btn ghost" id="goBack">Terug</button>
-    <button class="btn" id="goRetry">Opnieuw</button>
+    <button class="btn ghost" id="goBack">Back</button>
+    <button class="btn" id="goRetry">Retry</button>
   </div>
 </div>
 
 <!-- vriend-toevoegen-sheet -->
 <div class="win sheet" id="connect" role="dialog" aria-labelledby="connectTitle">
-  <button class="sheetclose" id="connectClose" aria-label="Sluiten">×</button>
-  <h3 id="connectTitle">Vriend toevoegen</h3>
-  <p>Deel je code of voeg de code van een vriend toe.</p>
+  <button class="sheetclose" id="connectClose" aria-label="Close">×</button>
+  <h3 id="connectTitle">Add a friend</h3>
+  <p>Share your code or add a friend's code.</p>
 
   <div class="csec">
-    <span class="ck">Jouw code</span>
+    <span class="ck">Your code</span>
     <div class="codebox">
       <div class="mycode" id="myCode">…</div>
     </div>
@@ -804,15 +804,15 @@
       <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
         <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.6-6.1c-.3-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.4-3c-.3-.4 0-.5.2-.7l.4-.5c.1-.2.1-.3.2-.5v-.5c0-.1-.5-1.4-.7-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s1 2.6 1.1 2.7c.1.2 1.9 3 4.6 4.2.6.3 1.1.4 1.5.6.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.4-.2z"/>
       </svg>
-      Nodig uit via WhatsApp
+      Invite via WhatsApp
     </button>
   </div>
 
   <div class="csec">
-    <span class="ck">Code van een vriend</span>
+    <span class="ck">A friend's code</span>
     <form class="codeform" id="addForm">
       <input id="codeInput" placeholder="FLX-····" maxlength="9" autocomplete="off">
-      <button class="btn small ghost" type="submit">Voeg toe</button>
+      <button class="btn small ghost" type="submit">Add</button>
     </form>
     <div class="notice" id="addStatus" style="margin-top:12px;display:none"></div>
   </div>
@@ -820,17 +820,17 @@
 
 <!-- help-sheet -->
 <div class="win sheet" id="help" role="dialog" aria-labelledby="helpTitle">
-  <h3 id="helpTitle">Hoe speel je?</h3>
+  <h3 id="helpTitle">How to play</h3>
   <div class="helpbody">
-    <p><strong>Eén regel.</strong> Tik op een tegel: die tegel en zijn buren (boven, onder, links, rechts) schuiven één kleur op. Breng het hele bord naar één kleur.</p>
+    <p><strong>One rule.</strong> Tap a tile: that tile and its neighbours (up, down, left, right) shift one color forward. Bring the whole board to a single color.</p>
     <div class="demo">
       <div class="demoboard" id="demoBoard"></div>
       <div class="demotap" id="demoTap"></div>
     </div>
-    <p><strong>Porselein-modus.</strong> Elke tegel verdraagt maar twee tikken: eerst barstjes, dan zware barsten. Een derde tik breekt hem en dan is het game over. Elke puzzel blijft oplosbaar zonder te breken.</p>
-    <p><strong>Symbolen.</strong> Kan je de kleuren moeilijk uit elkaar houden? Tik tijdens het spelen op het symbolen-knopje rechtsboven, dan krijgt elke kleur ook een eigen vorm (driehoek, cirkel, vierkant).</p>
+    <p><strong>Porcelain mode.</strong> Each tile only takes two taps: first hairline cracks, then heavy ones. A third tap breaks it and it's game over. Every puzzle stays solvable without breaking a tile.</p>
+    <p><strong>Symbols.</strong> Hard to tell the colors apart? While playing, tap the symbols button in the top right and every color also gets its own shape (triangle, circle, square).</p>
   </div>
-  <button class="btn ghost" id="helpClose" style="width:100%">Begrepen</button>
+  <button class="btn ghost" id="helpClose" style="width:100%">Got it</button>
 </div>
 
 <!-- win-kaart -->
@@ -841,9 +841,9 @@
   <div class="share" id="winShare" aria-hidden="true"></div>
   <div class="winfriends" id="winFriends" style="display:none"></div>
   <div class="actions">
-    <button class="btn ghost" id="winBack">Klaar</button>
-    <button class="btn" id="winShareBtn" style="display:none">Deel</button>
-    <button class="btn" id="winNext">Volgende</button>
+    <button class="btn ghost" id="winBack">Done</button>
+    <button class="btn" id="winShareBtn" style="display:none">Share</button>
+    <button class="btn" id="winNext">Next</button>
   </div>
 </div>
 
@@ -1008,7 +1008,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.2.2";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.3.0";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1020,15 +1020,15 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* elk tier een eigen accentkleur (warm belicht, past bij de triade) */
   /* color = chipkleur, deep = donkere variant voor tekst/knoppen (leesbaar op papier) */
   const FREE_DIFFS = {
-    starter: { label: "Starter", desc: "3×3 · 2 kleuren", size: 3, states: 2, kMin: 2, kMax: 3, color: "#2E9E90", deep: "#227A6F" },
-    junior:  { label: "Junior",  desc: "4×4 · 2 kleuren", size: 4, states: 2, kMin: 3, kMax: 4, color: "#F3B43A", deep: "#B27A10" },
-    expert:  { label: "Expert",  desc: "3×3 · 3 kleuren", size: 3, states: 3, kMin: 2, kMax: 3, color: "#F0654A", deep: "#C74B33" },
-    master:  { label: "Master",  desc: "4×4 · 3 kleuren", size: 4, states: 3, kMin: 3, kMax: 4, color: "#5E7FB2", deep: "#46648F" },
-    wizard:  { label: "Wizard",  desc: "5×5 · 3 kleuren", size: 5, states: 3, kMin: 5, kMax: 7, color: "#8F5E93", deep: "#714677" }
+    starter: { label: "Starter", desc: "3×3 · 2 colors", size: 3, states: 2, kMin: 2, kMax: 3, color: "#2E9E90", deep: "#227A6F" },
+    junior:  { label: "Junior",  desc: "4×4 · 2 colors", size: 4, states: 2, kMin: 3, kMax: 4, color: "#F3B43A", deep: "#B27A10" },
+    expert:  { label: "Expert",  desc: "3×3 · 3 colors", size: 3, states: 3, kMin: 2, kMax: 3, color: "#F0654A", deep: "#C74B33" },
+    master:  { label: "Master",  desc: "4×4 · 3 colors", size: 4, states: 3, kMin: 3, kMax: 4, color: "#5E7FB2", deep: "#46648F" },
+    wizard:  { label: "Wizard",  desc: "5×5 · 3 colors", size: 5, states: 3, kMin: 5, kMax: 7, color: "#8F5E93", deep: "#714677" }
   };
   /* één daily: deterministisch op datum, zelfde puzzel voor iedereen */
   const DAILIES = {
-    sprint: { label: "Daily Sprint", sub: "Zo snel mogelijk", size: 3, states: 2, kMin: 3, kMax: 4, color: "#F0654A", deep: "#C74B33" }
+    sprint: { label: "Daily Sprint", sub: "As fast as you can", size: 3, states: 2, kMin: 3, kMax: 4, color: "#F0654A", deep: "#C74B33" }
   };
 
   const dayKeyNow = () => new Date().toISOString().slice(0,10);
@@ -1136,34 +1136,34 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     const res = dailyResult("sprint");
     const prog = store.get(progKey(), null);
     const hero = $("dailyHero");
-    const dateStr = new Date().toLocaleDateString("nl-BE", { weekday:"long", day:"2-digit", month:"long" });
+    const dateStr = new Date().toLocaleDateString("en-GB", { weekday:"long", day:"2-digit", month:"long" });
     const loggedIn = !!(sb && session && myProfile);
     /* je mag zonder login spelen, maar tijden vergelijken kan pas ingelogd */
     const loginNote = loggedIn ? "" :
       '<div class="dnote"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
-      '<span>Je kan spelen zonder account, maar je tijd van vandaag vergelijken met vrienden kan pas als je inlogt.</span></div>';
+      '<span>You can play without an account, but comparing today\'s time with friends only works once you log in.</span></div>';
     if (res){
       hero.innerHTML =
         heroEmblem([0,0,0, 0,0,0, 0,0,0]) +
-        '<span class="dk">Klaar voor vandaag</span>' +
+        '<span class="dk">Done for today</span>' +
         '<h2 class="bigtime">' + res.time + '</h2>' +
-        '<div class="dmeta">' + pad(res.moves) + ' zetten · ' +
-        res.attempts + (res.attempts === 1 ? ' poging' : ' pogingen') + ' · ' +
+        '<div class="dmeta">' + pad(res.moves) + ' moves · ' +
+        res.attempts + (res.attempts === 1 ? ' attempt' : ' attempts') + ' · ' +
         res.hints + (res.hints === 1 ? ' hint' : ' hints') + '</div>' +
-        '<div class="ddesc">Je hebt de daily van vandaag opgelost. Kom morgen terug voor een nieuwe puzzel.</div>' +
+        '<div class="ddesc">You solved today\'s daily. Come back tomorrow for a new puzzle.</div>' +
         (loggedIn
-          ? '<button class="btn ghost" id="dailyFriends">Bekijk tijden</button>'
+          ? '<button class="btn ghost" id="dailyFriends">View times</button>'
           : loginNote);
       if (loggedIn) $("dailyFriends").addEventListener("click", ()=>show("vrienden"));
     } else {
       hero.innerHTML =
         heroEmblem() +
-        '<span class="dk">Daily · Snelheid</span>' +
+        '<span class="dk">Daily · Speed</span>' +
         '<h2>Sprint</h2>' +
         '<div class="ddate">' + dateStr + '</div>' +
-        '<div class="ddesc">Eén puzzel, dezelfde voor iedereen. De klok start meteen na de aftelling, dus los op zo snel je kan.</div>' +
-        '<div class="dmeta">' + cfg.size + '×' + cfg.size + ' · ' + cfg.states + ' kleuren</div>' +
-        '<button class="btn" id="dailyGo">' + (prog ? "Hervatten" : "Start") + '</button>' +
+        '<div class="ddesc">One puzzle, the same for everyone. The clock starts right after the countdown, so solve it as fast as you can.</div>' +
+        '<div class="dmeta">' + cfg.size + '×' + cfg.size + ' · ' + cfg.states + ' colors</div>' +
+        '<button class="btn" id="dailyGo">' + (prog ? "Resume" : "Start") + '</button>' +
         loginNote;
       $("dailyGo").addEventListener("click", ()=>{
         if (prog) startGame({ type:"daily", key:"sprint", resume: prog });
@@ -1219,28 +1219,28 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* lange namen inkorten: voornaam + eerste letter achternaam ("Daan Lybeert" → "Daan L.") */
   function shortName(full){
     const parts = String(full || "").trim().split(/\s+/).filter(Boolean);
-    if (parts.length <= 1) return parts[0] || "Speler";
+    if (parts.length <= 1) return parts[0] || "Player";
     return parts[0] + " " + parts[parts.length - 1][0].toUpperCase() + ".";
   }
 
   function frowHTML(r, rankLabel){
     /* par-relatief is de rangschikking; tijd groot rechts, zetten/hints onder de naam */
-    const nm = shortName(r.name || "Speler");
+    const nm = shortName(r.name || "Player");
     const av = AV_COLS[FluxCore.hashStr(r.code || r.name || nm) % 3];
     let sub, result;
     if (r.played){
-      sub = r.moves + " zetten · " + r.h + (r.h === 1 ? " hint" : " hints");
+      sub = r.moves + " moves · " + r.h + (r.h === 1 ? " hint" : " hints");
       result = '<span class="result"><span class="rtime">' + r.t + '</span>' +
-        '<span class="rpar' + (r.onpar ? " good" : "") + '">' + (r.onpar ? "op par" : "+" + r.over) + '</span></span>';
+        '<span class="rpar' + (r.onpar ? " good" : "") + '">' + (r.onpar ? "on par" : "+" + r.over) + '</span></span>';
     } else {
-      sub = "nog niet gespeeld";
+      sub = "not played yet";
       result = '<span class="result pending"><span class="rtime">--:--</span></span>';
     }
     /* ontkoppelen enkel op vriendenrijen (niet op jezelf): break-link → bevestigen */
     const menu = r.isFriend
-      ? '<button class="unlinkbtn" data-id="' + esc(r.id) + '" aria-label="Vriend ontkoppelen" title="Ontkoppelen">' + UNLINK_SVG + '</button>' +
-        '<button class="confirm-do" data-id="' + esc(r.id) + '">Ontkoppelen</button>' +
-        '<button class="confirm-x" aria-label="Annuleer">×</button>'
+      ? '<button class="unlinkbtn" data-id="' + esc(r.id) + '" aria-label="Unfriend" title="Unfriend">' + UNLINK_SVG + '</button>' +
+        '<button class="confirm-do" data-id="' + esc(r.id) + '">Unfriend</button>' +
+        '<button class="confirm-x" aria-label="Cancel">×</button>'
       : '';
     return '<div class="frow' + (r.me ? " me" : "") + '">' +
       '<span class="rank">' + (rankLabel == null ? "" : rankLabel) + '</span>' +
@@ -1262,7 +1262,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     const rows = (data || []).map(r => {
       const over = Math.max(0, (r.moves || 0) - (r.par || 0));
       return {
-        name: r.user_id === session.user.id ? "Jij" : (r.profiles && r.profiles.name) || "Speler",
+        name: r.user_id === session.user.id ? "You" : (r.profiles && r.profiles.name) || "Player",
         code: (r.profiles && r.profiles.code) || "",
         over: over, onpar: over === 0, moves: r.moves,
         timeMs: r.time_ms, t: fmtTime(r.time_ms),
@@ -1277,25 +1277,25 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   async function refreshRanking(){
     const el = $("ranking");
     if (!(sb && session)){
-      el.innerHTML = '<div class="notice" style="margin:6px 0">Log in om je vrienden en tijden te zien.</div>';
+      el.innerHTML = '<div class="notice" style="margin:6px 0">Log in to see your friends and times.</div>';
       return;
     }
-    if (!el.children.length) el.innerHTML = '<div class="notice">laden…</div>';
+    if (!el.children.length) el.innerHTML = '<div class="notice">loading…</div>';
     const myId = session.user.id;
     /* vrienden + resultaten van vandaag parallel ophalen */
     const [fr, rr] = await Promise.all([
       sb.from("friends").select("friend_id, profiles!friends_friend_id_fkey(name, code)").eq("user_id", myId),
       sb.from("daily_results").select("time_ms, moves, par, hints, user_id").eq("day", todayKey)
     ]);
-    if (fr.error || rr.error){ el.innerHTML = '<div class="notice">ranglijst laden mislukt · check je verbinding</div>'; return; }
+    if (fr.error || rr.error){ el.innerHTML = '<div class="notice">couldn\'t load leaderboard · check your connection</div>'; return; }
 
     const resById = {};
     (rr.data || []).forEach(r => { resById[r.user_id] = r; });
 
     /* deelnemers = jij + al je vrienden (ook wie nog niet speelde) */
-    const participants = [{ id: myId, name: "Jij", code: myCode || "", me: true, isFriend: false }];
+    const participants = [{ id: myId, name: "You", code: myCode || "", me: true, isFriend: false }];
     (fr.data || []).filter(r => r.profiles).forEach(r => participants.push({
-      id: r.friend_id, name: r.profiles.name || "Speler", code: r.profiles.code || "",
+      id: r.friend_id, name: r.profiles.name || "Player", code: r.profiles.code || "",
       me: false, isFriend: true
     }));
 
@@ -1318,16 +1318,16 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     el.innerHTML = html;
 
     if (participants.length === 1 && !participants[0].played){
-      el.innerHTML += '<div class="notice" style="margin-top:12px">Voeg vrienden toe met de +-knop en speel de daily om mee te doen</div>';
+      el.innerHTML += '<div class="notice" style="margin-top:12px">Add friends with the + button and play the daily to join in</div>';
     }
   }
 
   /* uitnodigen via WhatsApp: installatielink + jouw vriendencode */
   $("waShare").addEventListener("click", ()=>{
     if (!session){ login(); return; }
-    const msg = "Hey! Ik speel " + GAME_NAME + ", een puzzelgame met een dagelijkse puzzel. " +
-      "Speel je mee? Installeer de app via " + APP_URL +
-      " en voeg me toe met mijn code " + myCode + ".";
+    const msg = "Hey! I'm playing " + GAME_NAME + ", a puzzle game with a daily puzzle. " +
+      "Want to join? Install the app at " + APP_URL +
+      " and add me with my code " + myCode + ".";
     window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
   });
 
@@ -1340,11 +1340,11 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   $("addForm").addEventListener("submit", async e => {
     e.preventDefault();
     const input = $("codeInput");
-    if (!session){ addStatus("Log eerst in om vrienden toe te voegen.", false); return; }
+    if (!session){ addStatus("Log in first to add friends.", false); return; }
     const v = input.value.trim().toUpperCase();
-    if (!/^FLX-[A-Z2-9]{4}$/.test(v) || v === myCode){ addStatus("Dat is geen geldige vriendencode.", false); return; }
+    if (!/^FLX-[A-Z2-9]{4}$/.test(v) || v === myCode){ addStatus("That's not a valid friend code.", false); return; }
     const { error } = await sb.rpc("add_friend", { friend_code: v });
-    if (error){ addStatus("Die code hebben we niet gevonden.", false); return; }
+    if (error){ addStatus("We couldn't find that code.", false); return; }
     input.value = ""; $("addStatus").style.display = "none";
     refreshRanking();
     closeSheets();      /* popup sluit → je landt meteen op het leaderboard */
@@ -1366,7 +1366,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     if (doUnlink && sb && session){
       doUnlink.disabled = true; doUnlink.textContent = "…";
       const { error } = await sb.rpc("remove_friend", { other: doUnlink.dataset.id });
-      if (error){ doUnlink.disabled = false; doUnlink.textContent = "Ontkoppelen"; return; }
+      if (error){ doUnlink.disabled = false; doUnlink.textContent = "Unfriend"; return; }
       refreshRanking();
     }
   });
@@ -1407,7 +1407,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     for (let i=0;i<size*size;i++){
       const t = document.createElement("button");
       t.className = "tile s0";
-      t.setAttribute("aria-label","tegel "+(i+1));
+      t.setAttribute("aria-label","tile "+(i+1));
       const g = document.createElement("span"); g.className = "g";
       t.appendChild(g);
       const cr = document.createElement("span"); cr.className = "cr";
@@ -1554,7 +1554,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       cfg = FREE_DIFFS[c.key];
       c.fragile = (mode === "fragile");
       setAccent(cfg);
-      $("gMode").textContent = c.fragile ? "Porselein" : "Vrij spel";
+      $("gMode").textContent = c.fragile ? "Porcelain" : "Free play";
       $("gModeSub").textContent = cfg.label + " · " + cfg.desc;
       $("newBtn").style.display = "";
       show("game"); buildBoard(cfg.size); newFreePuzzle();
@@ -1605,32 +1605,32 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       submitDaily(attempts);   /* serverside verificatie + echte ranglijst */
       refreshVandaag(); refreshRanking();
 
-      $("winTitle").textContent = "Proficiat!";
+      $("winTitle").textContent = "Nice one!";
       $("winSub").textContent = cfg.label + " · " +
-        new Date().toLocaleDateString("nl-BE", { day: "2-digit", month: "long" });
-      stats.innerHTML = [["Tijd", tStr], ["Zetten", pad(moves)], ["Pogingen", attempts], ["Hints", hintsUsed]]
+        new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long" });
+      stats.innerHTML = [["Time", tStr], ["Moves", pad(moves)], ["Attempts", attempts], ["Hints", hintsUsed]]
         .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
-      friends.innerHTML = '<div class="fh">Vrienden vandaag</div>';
+      friends.innerHTML = '<div class="fh">Friends today</div>';
       fetchDailyRows().then(rows => {
-        if (rows) friends.innerHTML = '<div class="fh">Vrienden vandaag</div>' + rows.map((r,i)=>frowHTML(r,i+1)).join("");
+        if (rows) friends.innerHTML = '<div class="fh">Friends today</div>' + rows.map((r,i)=>frowHTML(r,i+1)).join("");
       });
       stats.style.display = "flex"; friends.style.display = "block"; share.style.display = "none";
 
       /* spoilervrij deelbeeld: enkel je prestatie, niet de oplossing */
-      const parTag = onpar ? "op par ✓" : "+" + (moves - par) + " boven par";
+      const parTag = onpar ? "on par ✓" : "+" + (moves - par) + " over par";
       const streak = store.get("flux-streak", 0);
       shareText = GAME_NAME + " Sprint · " + todayKey.slice(8) + "/" + todayKey.slice(5,7) + "\n" +
-        "⏱ " + tStr + " · " + moves + " zetten (par " + par + ") · " + parTag + "\n" +
-        (streak > 0 ? "🔥 " + streak + " dagen op rij\n" : "") +
+        "⏱ " + tStr + " · " + moves + " moves (par " + par + ") · " + parTag + "\n" +
+        (streak > 0 ? "🔥 " + streak + " day streak\n" : "") +
         APP_URL;
       $("winShareBtn").style.display = "";
     } else {
       $("winShareBtn").style.display = "none";
       /* vrij spel: zelfde propere statblokjes als de daily */
-      $("winTitle").textContent = onpar ? "Op par!" : "Opgelost";
+      $("winTitle").textContent = onpar ? "On par!" : "Solved";
       $("winSub").textContent =
-        (ctx.fragile ? "Porselein" : "Vrij spel") + " · " + cfg.label + " · " + cfg.desc;
-      stats.innerHTML = [["Zetten", pad(moves)], ["Par", pad(par)], ["Tijd", tStr], ["Hints", hintsUsed]]
+        (ctx.fragile ? "Porcelain" : "Free play") + " · " + cfg.label + " · " + cfg.desc;
+      stats.innerHTML = [["Moves", pad(moves)], ["Par", pad(par)], ["Time", tStr], ["Hints", hintsUsed]]
         .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
       stats.style.display = "flex"; share.style.display = "none"; friends.style.display = "none";
     }
@@ -1673,7 +1673,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     try {
       await navigator.clipboard.writeText(shareText);
       const b = $("winShareBtn"), o = b.textContent;
-      b.textContent = "Gekopieerd!";
+      b.textContent = "Copied!";
       setTimeout(()=>{ b.textContent = o; }, 1600);
     } catch(e){}
   });
@@ -1784,9 +1784,9 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       $("addFriendFab").style.display = "none";
       box.innerHTML =
         '<div class="card"><span class="k">Account</span>' +
-        '<h3>Speel met vrienden</h3>' +
-        '<div class="desc">Log in om je vriendencode te krijgen, vrienden toe te voegen en mee te doen aan de daily-ranglijst. Je voortgang en streak volgen dan je account.</div>' +
-        '<button class="btn" id="loginBtn" style="width:100%;margin-top:16px">Inloggen met Google</button></div>';
+        '<h3>Play with friends</h3>' +
+        '<div class="desc">Log in to get your friend code, add friends and join the daily leaderboard. Your progress and streak then follow your account.</div>' +
+        '<button class="btn" id="loginBtn" style="width:100%;margin-top:16px">Sign in with Google</button></div>';
       $("loginBtn").addEventListener("click", login);
     }
     /* connect-popup meebijwerken */
