@@ -32,12 +32,13 @@
     --mono: "Space Mono", ui-monospace, monospace;
   }
 
-  html, body { height: 100%; }
+  /* app-shell: geen paginascroll (zeker als geïnstalleerde app); schermen scrollen zelf indien nodig */
+  html, body { height: 100%; overflow: hidden; }
   body {
     color: var(--ink);
     font-family: var(--font);
-    display: flex; justify-content: center; min-height: 100dvh;
-    overflow-x: hidden; position: relative;
+    display: flex; justify-content: center;
+    position: fixed; inset: 0; width: 100%;
     background:
       radial-gradient(120% 85% at 26% 8%, #F5EDDA 0%, #ECE1C9 44%, #E3D6B9 76%, #D9C9A9 100%);
   }
@@ -58,11 +59,12 @@
 
   .app {
     width: 100%; max-width: 420px; z-index: 1; position: relative;
-    display: flex; flex-direction: column; min-height: 100dvh;
+    display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
   }
 
   /* ================= schermen & router ================= */
-  .screen { display: none; flex: 1; flex-direction: column;
+  .screen { display: none; flex: 1; flex-direction: column; min-height: 0;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
     padding: 18px 26px calc(88px + env(safe-area-inset-bottom)); }
   .screen.active { display: flex; }
   /* de content schuift horizontaal mee met de tab-richting; de header blijft staan */
@@ -100,6 +102,14 @@
   .icon i:nth-child(3) { border-radius: 1px; }
   .icon.lamp { color: var(--ink); }
   .icon.lamp:active { color: var(--accent); }
+
+  /* topbar-groep rechts (naam + uitloggen + vriend toevoegen) */
+  .tbgroup { display: flex; align-items: center; gap: 8px; }
+  .tbname {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+    margin-right: 2px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
   /* help-sheet: zelfde papier als win-kaart, met leesbare body */
   .sheet .helpbody p { font-family: var(--font); font-size: 13.5px; color: var(--ink); line-height: 1.55; margin-bottom: 12px; }
@@ -503,9 +513,9 @@
 
   .notice { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: center; margin-top: 16px; letter-spacing: 0.06em; }
 
-  /* buildversie, rechtsonder op home */
+  /* buildversie, onder de modus-toggle op home */
   .build {
-    margin-top: auto; padding-top: 16px; text-align: right;
+    margin-top: 14px; text-align: center;
     font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
     color: var(--muted); opacity: 0.75;
   }
@@ -585,7 +595,13 @@
   <section class="screen" id="scr-vrienden">
     <div class="topbar">
       <div class="wordmark wm2"></div>
-      <button class="icon" id="addFriendBtn" aria-label="Vriend toevoegen">+</button>
+      <div class="tbgroup">
+        <span class="tbname" id="userName"></span>
+        <button class="icon" id="logoutIcon" aria-label="Uitloggen" style="display:none">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><path d="M17 8l4 4-4 4"/><path d="M21 12H10"/></svg>
+        </button>
+        <button class="icon" id="addFriendBtn" aria-label="Vriend toevoegen">+</button>
+      </div>
     </div>
     <div class="content">
       <div class="h1">Vrienden</div>
@@ -890,7 +906,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v0.10.0";                    /* omhoog bij elke feature-push */
+  const BUILD = "v0.10.1";                    /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -953,8 +969,9 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   }
   tabbar.querySelectorAll("button").forEach(b => b.addEventListener("click", ()=>show(b.dataset.tab)));
 
-  /* ================= spelmodus: classic / porselein ================= */
-  let mode = store.get("flux-mode", "classic");
+  /* ================= spelmodus: classic / porselein =================
+     bewust niet persistent: de app start altijd in Classic */
+  let mode = "classic";
   /* porselein-achtergrond ALLEEN op home en tijdens een porselein-potje (vrij spel).
      Daily en alle andere schermen houden altijd het warme papier. */
   function updateBg(){
@@ -962,7 +979,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     document.body.classList.toggle("fragile", mode === "fragile" && (curScreen === "spelen" || inFragileGame));
   }
   function setMode(m){
-    mode = m; store.set("flux-mode", m);
+    mode = m;
     updateBg();
     const tg = $("modeToggle");
     tg.classList.toggle("right", m === "fragile");
@@ -1496,13 +1513,14 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     const box = $("authBox");
     if (!sb){ box.innerHTML = ""; return; }
     if (session && myProfile){
-      box.innerHTML =
-        '<div class="card"><div class="row">' +
-        '<div><span class="k">Ingelogd</span><h3>' + myProfile.name + '</h3>' +
-        '<div class="desc" style="margin-top:2px">Jouw code: <strong>' + myProfile.code + '</strong></div></div>' +
-        '<button class="textbtn" id="logoutBtn">Uitloggen</button></div></div>';
-      $("logoutBtn").addEventListener("click", logout);
+      /* ingelogd: alles naar de topbar, scherm vrij voor de ranglijst */
+      box.innerHTML = ""; box.style.display = "none";
+      $("userName").textContent = (myProfile.name || "").split(" ")[0];
+      $("logoutIcon").style.display = "";
     } else {
+      box.style.display = "";
+      $("userName").textContent = "";
+      $("logoutIcon").style.display = "none";
       box.innerHTML =
         '<div class="card"><span class="k">Account</span>' +
         '<h3>Speel met vrienden</h3>' +
@@ -1514,6 +1532,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     $("myCode").textContent = myCode || "—";
     drawQr(myCode);
   }
+  $("logoutIcon").addEventListener("click", logout);
 
   async function loadProfile(){
     if (!(sb && session)) return;
