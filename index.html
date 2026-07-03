@@ -879,9 +879,9 @@
       <span class="setlabel">Haptics</span>
       <button class="switch" id="swHaptics" role="switch" aria-checked="true" aria-label="Haptics"><span class="knob"></span></button>
     </div>
-    <div class="setrow disabled">
-      <span class="setlabel">Notifications<small>Coming soon</small></span>
-      <button class="switch" id="swNotify" role="switch" aria-checked="false" aria-label="Notifications" disabled><span class="knob"></span></button>
+    <div class="setrow" id="notifyRow">
+      <span class="setlabel">Notifications<small id="notifyHint">Daily puzzle reminder</small></span>
+      <button class="switch" id="swNotify" role="switch" aria-checked="false" aria-label="Notifications"><span class="knob"></span></button>
     </div>
   </div>
 
@@ -1103,10 +1103,11 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.6.1";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.7.0";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
+  const VAPID_PUBLIC = "BAdTI5FoUHzg7glSRHoD6Sdz4aKMqg0vxNXjqyv6i7VzWEc030WWhZkPYL_E9QIviEKGZ8dHG9uqSXndFIOh8xU";
   const TARGET = 0;
   const glyphs = ["▲","●","■"];
 
@@ -1289,6 +1290,70 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   }
   $("swSound").addEventListener("click", ()=>{ soundOn = !soundOn; store.set("flux-sound", soundOn); applySettingsUI(); if (soundOn) playTick(); });
   $("swHaptics").addEventListener("click", ()=>{ hapticsOn = !hapticsOn; store.set("flux-haptics", hapticsOn); applySettingsUI(); if (hapticsOn) haptic(14); });
+
+  /* ===== push-notificaties (nieuwe daily) ===== */
+  const pushSupported = () => ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window);
+  function urlB64ToUint8(base64){
+    const padding = "=".repeat((4 - base64.length % 4) % 4);
+    const b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(b64), arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+  }
+  async function currentPushSub(){
+    if (!pushSupported()) return null;
+    try { const reg = await navigator.serviceWorker.ready; return await reg.pushManager.getSubscription(); } catch(e){ return null; }
+  }
+  async function enablePush(){
+    if (!pushSupported()) return { ok:false, why:"unsupported" };
+    if (!(sb && session)) return { ok:false, why:"login" };
+    let perm = Notification.permission;
+    if (perm === "default") perm = await Notification.requestPermission();
+    if (perm !== "granted") return { ok:false, why:"denied" };
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(VAPID_PUBLIC) });
+    const { error } = await sb.from("push_subscriptions").upsert(
+      { endpoint: sub.endpoint, user_id: session.user.id, sub: sub.toJSON() }, { onConflict: "endpoint" });
+    if (error) return { ok:false, why:"store" };
+    return { ok:true };
+  }
+  async function disablePush(){
+    const sub = await currentPushSub();
+    if (sub){
+      try { if (sb) await sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint); } catch(e){}
+      try { await sub.unsubscribe(); } catch(e){}
+    }
+  }
+  async function refreshNotifyUI(){
+    const sw = $("swNotify"), hint = $("notifyHint");
+    const sub = await currentPushSub();
+    const on = !!sub && (typeof Notification !== "undefined") && Notification.permission === "granted";
+    sw.setAttribute("aria-checked", on ? "true" : "false");
+    if (!pushSupported()) hint.textContent = "Add to your home screen first";
+    else if (!(sb && session)) hint.textContent = "Log in to enable";
+    else if (Notification.permission === "denied") hint.textContent = "Blocked in browser settings";
+    else hint.textContent = on ? "New daily at 09:00" : "Daily puzzle reminder";
+  }
+  $("swNotify").addEventListener("click", async ()=>{
+    const sw = $("swNotify");
+    const isOn = sw.getAttribute("aria-checked") === "true";
+    sw.style.pointerEvents = "none";
+    if (!isOn){
+      const r = await enablePush();
+      if (!r.ok){
+        $("notifyHint").textContent =
+          r.why === "unsupported" ? "Add to your home screen first" :
+          r.why === "login" ? "Log in to enable" :
+          r.why === "denied" ? "Permission denied" : "Could not enable";
+      }
+    } else {
+      await disablePush();
+    }
+    await refreshNotifyUI();
+    sw.style.pointerEvents = "";
+  });
+
   $("settingsBtn").addEventListener("click", ()=>openSheet("settings"));
   $("settingsCloseX").addEventListener("click", closeSheets);
   $("logoutBtn").addEventListener("click", ()=>{ closeSheets(); logout(); });
@@ -1905,6 +1970,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     }
     if (id === "settings"){
       applySettingsUI();
+      refreshNotifyUI();
       $("accountGroup").style.display = (sb && session) ? "" : "none";
       $("delConfirm").style.display = "none";
       $("delYes").disabled = false; $("delYes").textContent = "Delete";
