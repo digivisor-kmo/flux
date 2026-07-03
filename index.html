@@ -273,7 +273,7 @@
   .frow .result .rtime { font-size: 13px; font-weight: 700; color: var(--ink); }
   .frow .result .rpar { display: block; font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-top: 1px; }
   .frow .result .rpar.good { color: var(--c0); }
-  .frow .result.pending { font-size: 9.5px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; }
+  .frow .result.pending .rtime { color: var(--muted); font-weight: 700; letter-spacing: 0.06em; }
 
   /* ================= tiers: rustige papieren rijen met gekleurde vouwchip ================= */
   .tier {
@@ -493,6 +493,15 @@
   }
   .win.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
   .win h3 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
+  /* sluitknop rechtsboven in een sheet-popup */
+  .sheetclose {
+    position: absolute; top: 16px; right: 16px; z-index: 2;
+    width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+    background: rgba(42,33,24,0.06); color: var(--muted);
+    font-size: 21px; line-height: 1; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .sheetclose:active { transform: scale(0.9); background: rgba(42,33,24,0.12); }
   .win p { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
   .win .share { display: grid; gap: 4px; margin-bottom: 18px; }
   .win .share i { width: 15px; height: 15px; border-radius: 4px; display: block; position: relative; overflow: hidden;
@@ -575,6 +584,7 @@
   .flrow .rm:disabled { opacity: 0.5; }
   .flempty { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; padding: 4px 0; line-height: 1.5; }
   .frow .name { font-weight: 700; font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .frow .name small { display: block; font-family: var(--mono); font-size: 9px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; margin-top: 2px; text-transform: none; overflow: hidden; text-overflow: ellipsis; }
   .frow .rank { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 16px; flex: none; text-align: center; }
   .frow.me { background: rgba(46,158,144,0.08); border-radius: 10px; padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
   .frow.me .name { color: var(--c0); }
@@ -781,6 +791,7 @@
 
 <!-- vriend-toevoegen-sheet -->
 <div class="win sheet" id="connect" role="dialog" aria-labelledby="connectTitle">
+  <button class="sheetclose" id="connectClose" aria-label="Sluiten">×</button>
   <h3 id="connectTitle">Vriend toevoegen</h3>
   <p>Deel je code of voeg de code van een vriend toe.</p>
 
@@ -997,7 +1008,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.2.1";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.2.2";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1205,16 +1216,25 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* break-link icoon (lucide "unlink") voor het ontkoppelen van een vriend */
   const UNLINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18.84 12.25 1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="m5.17 11.75-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></svg>';
 
+  /* lange namen inkorten: voornaam + eerste letter achternaam ("Daan Lybeert" → "Daan L.") */
+  function shortName(full){
+    const parts = String(full || "").trim().split(/\s+/).filter(Boolean);
+    if (parts.length <= 1) return parts[0] || "Speler";
+    return parts[0] + " " + parts[parts.length - 1][0].toUpperCase() + ".";
+  }
+
   function frowHTML(r, rankLabel){
-    /* par-relatief is de rangschikking; tijd groot, parstatus klein eronder */
-    const nm = r.name || "Speler";
-    const av = AV_COLS[FluxCore.hashStr(r.code || nm) % 3];
-    let result;
+    /* par-relatief is de rangschikking; tijd groot rechts, zetten/hints onder de naam */
+    const nm = shortName(r.name || "Speler");
+    const av = AV_COLS[FluxCore.hashStr(r.code || r.name || nm) % 3];
+    let sub, result;
     if (r.played){
+      sub = r.moves + " zetten · " + r.h + (r.h === 1 ? " hint" : " hints");
       result = '<span class="result"><span class="rtime">' + r.t + '</span>' +
         '<span class="rpar' + (r.onpar ? " good" : "") + '">' + (r.onpar ? "op par" : "+" + r.over) + '</span></span>';
     } else {
-      result = '<span class="result pending">nog niet gespeeld</span>';
+      sub = "nog niet gespeeld";
+      result = '<span class="result pending"><span class="rtime">--:--</span></span>';
     }
     /* ontkoppelen enkel op vriendenrijen (niet op jezelf): break-link → bevestigen */
     const menu = r.isFriend
@@ -1225,7 +1245,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     return '<div class="frow' + (r.me ? " me" : "") + '">' +
       '<span class="rank">' + (rankLabel == null ? "" : rankLabel) + '</span>' +
       '<span class="avatar" style="background:' + av + '"><span>' + esc(nm[0].toUpperCase()) + '</span></span>' +
-      '<span class="name">' + esc(nm) + '</span>' +
+      '<span class="name">' + esc(nm) + '<small>' + esc(sub) + '</small></span>' +
       result + menu +
       '</div>';
   }
@@ -1244,7 +1264,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       return {
         name: r.user_id === session.user.id ? "Jij" : (r.profiles && r.profiles.name) || "Speler",
         code: (r.profiles && r.profiles.code) || "",
-        over: over, onpar: over === 0,
+        over: over, onpar: over === 0, moves: r.moves,
         timeMs: r.time_ms, t: fmtTime(r.time_ms),
         att: r.attempts, h: r.hints, played: true,
         me: r.user_id === session.user.id
@@ -1284,7 +1304,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       if (res){
         const over = Math.max(0, (res.moves || 0) - (res.par || 0));
         p.played = true; p.over = over; p.onpar = over === 0;
-        p.timeMs = res.time_ms; p.t = fmtTime(res.time_ms); p.h = res.hints;
+        p.timeMs = res.time_ms; p.t = fmtTime(res.time_ms); p.h = res.hints; p.moves = res.moves;
       } else { p.played = false; }
     });
 
@@ -1682,6 +1702,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     else closeSheets();
   });
   $("addFriendFab").addEventListener("click", ()=>openSheet("connect"));
+  $("connectClose").addEventListener("click", closeSheets);
 
   /* help-sheet met demo-animatie: plus van amber → tik midden → alles teal */
   const demoBoard = $("demoBoard"), demoTap = $("demoTap");
