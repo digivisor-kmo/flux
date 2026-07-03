@@ -606,7 +606,7 @@
         <button class="icon" id="logoutIcon" aria-label="Uitloggen" style="display:none">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><path d="M17 8l4 4-4 4"/><path d="M21 12H10"/></svg>
         </button>
-        <button class="icon add" id="addFriendBtn" aria-label="Vriend toevoegen">+</button>
+        <button class="icon add" id="addFriendBtn" aria-label="Vriend toevoegen" style="display:none">+</button>
       </div>
     </div>
     <div class="content">
@@ -911,7 +911,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v0.10.2";                    /* omhoog bij elke feature-push */
+  const BUILD = "v0.10.4";                    /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1505,10 +1505,12 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       box.innerHTML = ""; box.style.display = "none";
       $("userName").textContent = (myProfile.name || "").split(" ")[0];
       $("logoutIcon").style.display = "";
+      $("addFriendBtn").style.display = "";
     } else {
       box.style.display = "";
       $("userName").textContent = "";
       $("logoutIcon").style.display = "none";
+      $("addFriendBtn").style.display = "none";
       box.innerHTML =
         '<div class="card"><span class="k">Account</span>' +
         '<h3>Speel met vrienden</h3>' +
@@ -1613,6 +1615,11 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   renderAuth();
   refreshVandaag();
   refreshRanking();
+
+  /* Net terug van Google-login? Blijf op het vriendenscherm i.p.v. naar home te
+     springen. De OAuth-redirect herlaadt de app op de default-tab; deze check
+     vangt de terugkeer-URL op vóór supabase hem opschoont. */
+  if (sb && /[?&]code=|[#&]access_token=/.test(location.search + location.hash)) show("vrienden");
 
   /* PWA: service worker voor installeerbaarheid en offline-vangnet */
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
