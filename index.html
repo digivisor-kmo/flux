@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>FLUX</title>
+<meta name="theme-color" content="#ECE1C9">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="FLUX">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -879,7 +887,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v0.9.1";                     /* omhoog bij elke feature-push */
+  const BUILD = "v0.9.2";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const TARGET = 0;
   const glyphs = ["▲","●","■"];
@@ -1463,6 +1471,9 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   setMode(mode);
   refreshVandaag();
   refreshRanking();
+
+  /* PWA: service worker voor installeerbaarheid en offline-vangnet */
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 
   /* ================= achtergrond: lichtbanen door een hoog raam =================
      Drie brede, zachte lichtstralen vanuit linksboven (dezelfde lichtrichting
