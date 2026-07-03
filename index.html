@@ -553,6 +553,16 @@
   .dailyhero .ddesc { font-size: 14px; color: var(--muted); line-height: 1.5; max-width: 264px; margin-top: 14px; }
   .dailyhero .dmeta { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 16px; letter-spacing: 0.08em; }
   .dailyhero .btn { margin-top: 24px; padding: 15px 38px; }
+  /* niet-ingelogd: zachte melding dat tijden pas te vergelijken zijn na login */
+  .dailyhero .dnote {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 18px; max-width: 272px;
+    padding: 10px 13px; border-radius: 12px;
+    background: rgba(46,158,144,0.09);
+    border: 1px solid rgba(46,158,144,0.22);
+    font-size: 12.5px; line-height: 1.45; color: var(--ink); text-align: left;
+  }
+  .dailyhero .dnote svg { flex: 0 0 auto; color: #227A6F; }
 
   @media (prefers-reduced-motion: reduce) {
     .tile, .win { transition-duration: 0.01ms !important; }
@@ -911,7 +921,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v0.10.4";                    /* omhoog bij elke feature-push */
+  const BUILD = "v0.10.5";                    /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1023,6 +1033,11 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     const prog = store.get(progKey(), null);
     const hero = $("dailyHero");
     const dateStr = new Date().toLocaleDateString("nl-BE", { weekday:"long", day:"2-digit", month:"long" });
+    const loggedIn = !!(sb && session && myProfile);
+    /* je mag zonder login spelen, maar tijden vergelijken kan pas ingelogd */
+    const loginNote = loggedIn ? "" :
+      '<div class="dnote"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>' +
+      '<span>Je kan spelen zonder account, maar je tijd van vandaag vergelijken met vrienden kan pas als je inlogt.</span></div>';
     if (res){
       hero.innerHTML =
         heroEmblem([0,0,0, 0,0,0, 0,0,0]) +
@@ -1032,8 +1047,10 @@ if (typeof module !== "undefined") module.exports = FluxCore;
         res.attempts + (res.attempts === 1 ? ' poging' : ' pogingen') + ' · ' +
         res.hints + (res.hints === 1 ? ' hint' : ' hints') + '</div>' +
         '<div class="ddesc">Je hebt de daily van vandaag opgelost. Kom morgen terug voor een nieuwe puzzel.</div>' +
-        '<button class="btn ghost" id="dailyFriends">Bekijk tijden</button>';
-      $("dailyFriends").addEventListener("click", ()=>show("vrienden"));
+        (loggedIn
+          ? '<button class="btn ghost" id="dailyFriends">Bekijk tijden</button>'
+          : loginNote);
+      if (loggedIn) $("dailyFriends").addEventListener("click", ()=>show("vrienden"));
     } else {
       hero.innerHTML =
         heroEmblem() +
@@ -1042,7 +1059,8 @@ if (typeof module !== "undefined") module.exports = FluxCore;
         '<div class="ddate">' + dateStr + '</div>' +
         '<div class="ddesc">Eén puzzel, dezelfde voor iedereen. De klok start meteen na de aftelling, dus los op zo snel je kan.</div>' +
         '<div class="dmeta">' + cfg.size + '×' + cfg.size + ' · ' + cfg.states + ' kleuren</div>' +
-        '<button class="btn" id="dailyGo">' + (prog ? "Hervatten" : "Start") + '</button>';
+        '<button class="btn" id="dailyGo">' + (prog ? "Hervatten" : "Start") + '</button>' +
+        loginNote;
       $("dailyGo").addEventListener("click", ()=>{
         if (prog) startGame({ type:"daily", key:"sprint", resume: prog });
         else countdown(()=>startGame({ type:"daily", key:"sprint" }));
