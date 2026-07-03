@@ -42,8 +42,9 @@
     background:
       radial-gradient(120% 85% at 26% 8%, #F5EDDA 0%, #ECE1C9 44%, #E3D6B9 76%, #D9C9A9 100%);
   }
-  /* Porselein-modus: koeler blauwgrijs licht, zelfde lichtbron linksboven */
-  body.fragile {
+  /* Numbers-modus: koeler blauwgrijs licht op home en tijdens een numbers-potje
+     (neemt het achtergrond-gedrag over van de vroegere Porselein-modus) */
+  body.numbers {
     background:
       radial-gradient(120% 85% at 26% 8%, #F1F5F4 0%, #E2EAE9 44%, #D2DEDE 76%, #C1D1D2 100%);
   }
@@ -320,6 +321,10 @@
     color: var(--muted); padding: 10px 4px; transition: color 0.25s ease;
   }
   .modetoggle button.on { color: var(--ink); }
+  /* toggle + kleiner ?-bolletje ernaast, samen gecentreerd */
+  .moderow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 22px; }
+  .moderow .modetoggle { margin: 0; }
+  .icon.help-mini { width: 32px; height: 32px; font-size: 14px; flex: none; }
 
   /* ================= Porselein: barsten en breken ================= */
   .tile .cr {
@@ -413,8 +418,10 @@
     filter: blur(4px);
   }
   .board { display: grid; gap: 13px; aspect-ratio: 1; position: relative; perspective: 900px; }
+  .board.n2 { gap: 22px; }
   .board.n3 { gap: 18px; }
   .board.n4 { gap: 15px; }
+  .board.n5 { gap: 12px; }
 
   .tile {
     aspect-ratio: 1; border-radius: 7%; border: none; cursor: pointer;
@@ -470,6 +477,28 @@
   @keyframes wave { 0%{transform: translateY(0) scale(1)} 40%{transform: translateY(-6px) scale(1.06)} 100%{transform: translateY(0) scale(1)} }
   .tile.hint { z-index: 5; animation: hintPulse 1.15s ease-in-out infinite; outline: 3px solid var(--ink); outline-offset: 3px; }
   @keyframes hintPulse { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.05); } }
+
+  /* ================= Numbers-modus: genummerde tegels, groen (aan) / rood (uit) ================= */
+  .tile.ntile.on  { background: var(--c0); }   /* geactiveerd = groen */
+  .tile.ntile.off { background: var(--c1); }   /* niet geactiveerd = rood */
+  .tile .num {
+    position: relative; z-index: 3; font-family: var(--mono); font-weight: 700; color: #fff;
+    text-shadow: 0 1px 2px rgba(20,30,25,0.4); font-size: clamp(16px, 7vw, 30px);
+    pointer-events: none;
+  }
+  .board.n4 .tile .num { font-size: clamp(13px, 5vw, 22px); }
+  .board.n5 .tile .num { font-size: clamp(11px, 4vw, 18px); }
+  /* bedrading als leesbare pill onderaan de tegel, altijd op één lijn */
+  .tile .wire {
+    position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
+    z-index: 4; display: none; white-space: nowrap; pointer-events: none;
+    background: rgba(20,16,10,0.58); color: #fff; border-radius: 20px; padding: 2px 7px;
+    font-family: var(--mono); font-weight: 700; font-size: 9px; letter-spacing: 0.02em; line-height: 1.35;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .board.reveal .tile .wire { display: block; }
+  .board.n4 .tile .wire { font-size: 8px; padding: 1px 6px; }
+  .board.n5 .tile .wire { font-size: 7px; padding: 1px 5px; bottom: 4px; }
 
   .status { display: flex; align-items: center; justify-content: center; gap: 26px; margin-top: 30px; }
   .stat { text-align: center; min-width: 62px; }
@@ -663,16 +692,18 @@
   <section class="screen active" id="scr-spelen">
     <div class="topbar">
       <div class="wordmark wm2"></div>
-      <button class="icon" id="helpBtn" aria-label="Help">?</button>
     </div>
 
     <div class="content">
       <div id="freeCards" style="margin-top:24px"></div>
 
-      <div class="modetoggle" id="modeToggle" role="radiogroup" aria-label="Game mode">
-        <span class="thumb"></span>
-        <button data-mode="classic" class="on" role="radio">Classic</button>
-        <button data-mode="fragile" role="radio">Porcelain</button>
+      <div class="moderow">
+        <div class="modetoggle" id="modeToggle" role="radiogroup" aria-label="Game mode">
+          <span class="thumb"></span>
+          <button data-mode="classic" class="on" role="radio">Classic</button>
+          <button data-mode="numbers" role="radio">Numbers</button>
+        </div>
+        <button class="icon help-mini" id="helpBtn" aria-label="Help">?</button>
       </div>
 
       <div class="build" id="buildTag"></div>
@@ -697,7 +728,7 @@
       <div id="authBox" style="margin-top:20px"></div>
 
       <div class="card" style="margin-top:14px">
-        <span class="k">Ranglijst · Daily Sprint</span>
+        <span class="k">Leaderboard · Daily Sprint</span>
         <div id="ranking" style="margin-top:6px"></div>
       </div>
       <div class="notice" id="rankNotice">Closest to par ranks first · then the fastest time</div>
@@ -720,6 +751,9 @@
         <div class="modesub" id="gModeSub">Starter</div>
       </div>
       <div class="gt-right">
+        <button class="icon eye" id="eyeBtn" aria-label="Reveal wiring" title="Reveal wiring" style="display:none">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
         <button class="icon symtog" id="symBtn" aria-label="Show symbols" aria-pressed="false" title="Symbols on/off">
           <i></i><i></i><i></i>
         </button>
@@ -733,7 +767,7 @@
     </div>
 
     <div class="goalline">
-      <span class="t">Make it one color</span>
+      <span class="t" id="goalText">Make it one color</span>
       <span class="sw"></span>
     </div>
 
@@ -744,11 +778,11 @@
     </div>
 
     <div class="status">
-      <div class="stat"><span class="k">Zetten</span><span class="v" id="moves">00</span></div>
+      <div class="stat"><span class="k" id="movesLabel">Moves</span><span class="v" id="moves">00</span></div>
+      <div class="sep" id="parSep"></div>
+      <div class="stat" id="parStat"><span class="k">Par</span><span class="v par" id="par">00</span></div>
       <div class="sep"></div>
-      <div class="stat"><span class="k">Par</span><span class="v par" id="par">00</span></div>
-      <div class="sep"></div>
-      <div class="stat"><span class="k">Tijd</span><span class="v time" id="time">00:00</span></div>
+      <div class="stat"><span class="k">Time</span><span class="v time" id="time">00:00</span></div>
     </div>
 
     <div class="foot">
@@ -820,22 +854,23 @@
 
 <!-- help-sheet -->
 <div class="win sheet" id="help" role="dialog" aria-labelledby="helpTitle">
+  <button class="sheetclose" id="helpCloseX" aria-label="Close">×</button>
   <h3 id="helpTitle">How to play</h3>
   <div class="helpbody">
-    <p><strong>One rule.</strong> Tap a tile: that tile and its neighbours (up, down, left, right) shift one color forward. Bring the whole board to a single color.</p>
+    <p><strong>Classic — one rule.</strong> Tap a tile: that tile and its neighbours (up, down, left, right) shift one color forward. Bring the whole board to a single color.</p>
     <div class="demo">
       <div class="demoboard" id="demoBoard"></div>
       <div class="demotap" id="demoTap"></div>
     </div>
-    <p><strong>Porcelain mode.</strong> Each tile only takes two taps: first hairline cracks, then heavy ones. A third tap breaks it and it's game over. Every puzzle stays solvable without breaking a tile.</p>
-    <p><strong>Symbols.</strong> Hard to tell the colors apart? While playing, tap the symbols button in the top right and every color also gets its own shape (triangle, circle, square).</p>
+    <p><strong>Numbers — hidden wiring.</strong> Each numbered tile secretly flips two other tiles between green and red — the tapped tile itself doesn't change. Tap around to learn which tiles are linked, then turn every tile green. Use the eye button to peek at the wiring.</p>
+    <p><strong>Symbols.</strong> Hard to tell the colors apart? While playing Classic, tap the symbols button in the top right and every color also gets its own shape (triangle, circle, square).</p>
   </div>
   <button class="btn ghost" id="helpClose" style="width:100%">Got it</button>
 </div>
 
 <!-- win-kaart -->
 <div class="win" id="win" role="dialog" aria-labelledby="winTitle">
-  <h3 id="winTitle">Opgelost</h3>
+  <h3 id="winTitle">Solved</h3>
   <p id="winSub"></p>
   <div class="winstats" id="winStats" style="display:none"></div>
   <div class="share" id="winShare" aria-hidden="true"></div>
@@ -1008,7 +1043,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.3.0";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.4.0";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1030,6 +1065,35 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   const DAILIES = {
     sprint: { label: "Daily Sprint", sub: "As fast as you can", size: 3, states: 2, kMin: 3, kMax: 4, color: "#F0654A", deep: "#C74B33" }
   };
+  /* Numbers-modus (verborgen bedrading): elke tegel schakelt L andere tegels om.
+     size = raster, links = aantal verborgen partners, kMin/kMax = scramble-stappen.
+     Klein en makkelijk tot groot en moeilijk. */
+  const NUMBERS_DIFFS = {
+    neasy:   { label: "Easy",   desc: "2×2 · 2 links", size: 2, links: 2, kMin: 2, kMax: 3,  color: "#2E9E90", deep: "#227A6F" },
+    nsimple: { label: "Simple", desc: "3×3 · 2 links", size: 3, links: 2, kMin: 3, kMax: 4,  color: "#F3B43A", deep: "#B27A10" },
+    nmedium: { label: "Medium", desc: "4×4 · 2 links", size: 4, links: 2, kMin: 5, kMax: 7,  color: "#F0654A", deep: "#C74B33" },
+    nhard:   { label: "Hard",   desc: "4×4 · 3 links", size: 4, links: 3, kMin: 7, kMax: 9,  color: "#5E7FB2", deep: "#46648F" },
+    nexpert: { label: "Expert", desc: "5×5 · 3 links", size: 5, links: 3, kMin: 9, kMax: 13, color: "#8F5E93", deep: "#714677" }
+  };
+  const randInt = n => Math.floor(Math.random() * n);
+  /* genereer een gegarandeerd oplosbare Numbers-puzzel: scramble vanuit alles-groen.
+     Terug-tikken van dezelfde scramble-set lost hem altijd op (toggle is zijn eigen inverse). */
+  function genNumbers(cfg){
+    const n = cfg.size * cfg.size, L = cfg.links, link = [];
+    for (let i = 0; i < n; i++){
+      const opts = [...Array(n).keys()].filter(x => x !== i);
+      for (let s = opts.length - 1; s > 0; s--){ const j = randInt(s + 1); [opts[s], opts[j]] = [opts[j], opts[s]]; }
+      link[i] = opts.slice(0, L).sort((a, b) => a - b);
+    }
+    let st;
+    do {
+      st = new Array(n).fill(1);                 // 1 = groen/aan, 0 = rood/uit
+      const k = cfg.kMin + randInt(cfg.kMax - cfg.kMin + 1);
+      const used = new Set(); while (used.size < Math.min(k, n)) used.add(randInt(n));
+      for (const i of used) for (const j of link[i]) st[j] ^= 1;
+    } while (st.every(v => v === 1));            // niet al opgelost
+    return { state: st, link };
+  }
 
   const dayKeyNow = () => new Date().toISOString().slice(0,10);
   let todayKey = dayKeyNow();
@@ -1078,22 +1142,23 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* ================= spelmodus: classic / porselein =================
      bewust niet persistent: de app start altijd in Classic */
   let mode = "classic";
-  /* porselein-achtergrond ALLEEN op home en tijdens een porselein-potje (vrij spel).
+  /* Numbers-achtergrond ALLEEN op home en tijdens een numbers-potje (vrij spel).
      Daily en alle andere schermen houden altijd het warme papier. */
   function updateBg(){
-    const inFragileGame = curScreen === "game" && !!(ctx && ctx.type === "free" && ctx.fragile === true);
-    document.body.classList.toggle("fragile", mode === "fragile" && (curScreen === "spelen" || inFragileGame));
+    const inNumbersGame = curScreen === "game" && !!(ctx && ctx.numbers === true);
+    document.body.classList.toggle("numbers", mode === "numbers" && (curScreen === "spelen" || inNumbersGame));
   }
   function setMode(m){
     mode = m;
     updateBg();
     const tg = $("modeToggle");
-    tg.classList.toggle("right", m === "fragile");
+    tg.classList.toggle("right", m === "numbers");
     tg.querySelectorAll("button").forEach(b => {
       const on = b.dataset.mode === m;
       b.classList.toggle("on", on);
       b.setAttribute("aria-checked", on ? "true" : "false");
     });
+    buildTiers();
   }
   $("modeToggle").querySelectorAll("button").forEach(b =>
     b.addEventListener("click", ()=>setMode(b.dataset.mode)));
@@ -1197,18 +1262,23 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     store.set("flux-streak-date", todayKey);
   }
 
-  /* ================= tiers: gekleurde vouwchips, hele knop tikbaar ================= */
+  /* ================= tiers: gekleurde vouwchips, hele knop tikbaar =================
+     de kaarten hangen af van de gekozen modus (Classic of Numbers) */
   const freeCards = $("freeCards");
-  Object.keys(FREE_DIFFS).forEach(key => {
-    const d = FREE_DIFFS[key];
-    const c = document.createElement("button");
-    c.className = "tier";
-    c.style.setProperty("--tc", d.color);
-    c.setAttribute("aria-label", d.label + ", " + d.desc);
-    c.innerHTML = '<div><h3>' + d.label + '</h3><span class="k">' + d.desc + '</span></div><span class="sw"></span>';
-    c.addEventListener("click", ()=>startGame({ type:"free", key }));
-    freeCards.appendChild(c);
-  });
+  function buildTiers(){
+    const table = mode === "numbers" ? NUMBERS_DIFFS : FREE_DIFFS;
+    freeCards.innerHTML = "";
+    Object.keys(table).forEach(key => {
+      const d = table[key];
+      const c = document.createElement("button");
+      c.className = "tier";
+      c.style.setProperty("--tc", d.color);
+      c.setAttribute("aria-label", d.label + ", " + d.desc);
+      c.innerHTML = '<div><h3>' + d.label + '</h3><span class="k">' + d.desc + '</span></div><span class="sw"></span>';
+      c.addEventListener("click", ()=>startGame({ type:"free", key }));
+      freeCards.appendChild(c);
+    });
+  }
 
   /* ================= vrienden (echt, via Supabase) ================= */
   let myCode = null;   /* komt uit het profiel na login */
@@ -1381,7 +1451,9 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   let tiles = [];
   let cracks = [];           /* porselein: tikken per tegel */
   let dailyTaps = [];        /* zettenlog van de huidige daily-poging (voor serververificatie) */
+  let nLink = [];            /* Numbers: verborgen bedrading per tegel */
   const fragileActive = () => ctx && ctx.type === "free" && ctx.fragile;
+  const isNumbers = () => !!(ctx && ctx.numbers);
 
   /* timer met hervat-ondersteuning: baseElapsed = reeds verstreken tijd */
   let t0 = null, timerId = null, elapsed = 0, baseElapsed = 0;
@@ -1402,29 +1474,38 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   function buildBoard(size){
     board.innerHTML = ""; tiles = [];
+    const numbers = isNumbers();
     board.className = "board n" + size;
     board.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
     for (let i=0;i<size*size;i++){
       const t = document.createElement("button");
-      t.className = "tile s0";
+      t.className = "tile";
       t.setAttribute("aria-label","tile "+(i+1));
-      const g = document.createElement("span"); g.className = "g";
-      t.appendChild(g);
-      const cr = document.createElement("span"); cr.className = "cr";
-      t.appendChild(cr);
+      if (numbers){
+        const num = document.createElement("span"); num.className = "num"; num.textContent = (i+1); t.appendChild(num);
+        const w = document.createElement("span"); w.className = "wire"; t.appendChild(w);
+      } else {
+        const g = document.createElement("span"); g.className = "g"; t.appendChild(g);
+        const cr = document.createElement("span"); cr.className = "cr"; t.appendChild(cr);
+      }
       t.addEventListener("click", ()=>tap(i));
       board.appendChild(t); tiles.push(t);
     }
-    applySymbols();   /* board.className is net gereset → symbolen opnieuw toepassen */
+    if (!numbers) applySymbols();   /* board.className is net gereset → symbolen opnieuw toepassen */
   }
 
   function paint(i, animate, isSource){
     const t = tiles[i];
     t.style.visibility = "";   /* herstel na een eerdere breuk */
-    let cls = "tile s"+state[i];
-    if (fragileActive() && cracks[i] > 0) cls += " c" + Math.min(cracks[i], 2);
-    t.className = cls;
-    t.querySelector(".g").textContent = glyphs[state[i]];
+    if (isNumbers()){
+      t.className = "tile ntile " + (state[i] ? "on" : "off");
+      const w = t.querySelector(".wire"); if (w) w.textContent = "→ " + nLink[i].map(j => j+1).join(" · ");
+    } else {
+      let cls = "tile s"+state[i];
+      if (fragileActive() && cracks[i] > 0) cls += " c" + Math.min(cracks[i], 2);
+      t.className = cls;
+      t.querySelector(".g").textContent = glyphs[state[i]];
+    }
     if (animate){
       void t.offsetWidth;
       t.classList.add(isSource ? "pop" : "ripple");
@@ -1458,6 +1539,16 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function tap(i){
     if (locked) return;
     startTimer();
+    /* Numbers: tik schakelt de verborgen partners om; de tegel zelf verandert niet */
+    if (isNumbers()){
+      for (const j of nLink[i]) state[j] ^= 1;
+      paint(i, true, false);                       /* aangetikte tegel: lichte lift */
+      nLink[i].forEach(j => paint(j, true, true)); /* partners: klappen om */
+      moves++; movesEl.textContent = pad(moves);
+      if (navigator.vibrate) navigator.vibrate(8);
+      if (state.every(v => v === 1)) showWin();
+      return;
+    }
     /* porselein: derde tik op dezelfde tegel breekt hem: game over */
     if (fragileActive()){
       cracks[i]++;
@@ -1531,7 +1622,8 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function startGame(c){
     ctx = c;
     if (c.type === "daily"){
-      c.fragile = false;              /* daily is altijd classic, ook qua achtergrond */
+      c.fragile = false; c.numbers = false;         /* daily is altijd classic, ook qua achtergrond */
+      applyGameChrome(false);
       const p = dailyPuzzle(c.key);
       cfg = p.cfg;
       setAccent(cfg);
@@ -1551,18 +1643,41 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       }
       startTimer();                                  /* sprint: klok loopt meteen */
     } else {
-      cfg = FREE_DIFFS[c.key];
-      c.fragile = (mode === "fragile");
+      const numbers = (mode === "numbers");
+      c.numbers = numbers; c.fragile = false;
+      cfg = numbers ? NUMBERS_DIFFS[c.key] : FREE_DIFFS[c.key];
+      applyGameChrome(numbers);
       setAccent(cfg);
-      $("gMode").textContent = c.fragile ? "Porcelain" : "Free play";
+      $("gMode").textContent = numbers ? "Numbers" : "Free play";
       $("gModeSub").textContent = cfg.label + " · " + cfg.desc;
       $("newBtn").style.display = "";
       show("game"); buildBoard(cfg.size); newFreePuzzle();
     }
   }
   function newFreePuzzle(){
+    if (isNumbers()){
+      const g = genNumbers(cfg);
+      nLink = g.link; state = g.state.slice(); start = state.slice();
+      moves = 0; movesEl.textContent = "00";
+      resetTimer(); renderAll(); hideWin(); entrance();
+      startTimer();                 /* klok loopt zodra het bord er staat */
+      return;
+    }
     const k = cfg.kMin + Math.floor(Math.random()*(cfg.kMax-cfg.kMin+1));
     loadPuzzle(FluxCore.generate(cfg.size, cfg.states, TARGET, k));
+    startTimer();                   /* klok loopt zodra het bord er staat */
+  }
+
+  /* game-chrome per modus: iconen, par-stat, labels, doeltekst */
+  function applyGameChrome(numbers){
+    $("eyeBtn").style.display = numbers ? "" : "none";
+    $("hintIconBtn").style.display = numbers ? "none" : "";
+    $("symBtn").style.display = numbers ? "none" : "";
+    $("parStat").style.display = numbers ? "none" : "";
+    $("parSep").style.display = numbers ? "none" : "";
+    $("movesLabel").textContent = numbers ? "Taps" : "Moves";
+    $("goalText").textContent = numbers ? "Make it all green" : "Make it one color";
+    board.classList.remove("reveal"); $("eyeBtn").classList.remove("on");
   }
 
   function reset(){
@@ -1580,6 +1695,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       resetTimer();
     }
     renderAll(); hideWin(); hideGameover();
+    if (!(ctx && ctx.type === "daily")) startTimer();   /* vrij spel: klok loopt meteen weer */
   }
 
   /* ================= win ================= */
@@ -1595,6 +1711,18 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     const onpar = moves <= par;
     const tStr = fmtTime(elapsed);
     const share = $("winShare"), stats = $("winStats"), friends = $("winFriends");
+
+    if (isNumbers()){
+      $("winShareBtn").style.display = "none";
+      $("winTitle").textContent = "Solved!";
+      $("winSub").textContent = "Numbers · " + cfg.label + " · " + cfg.desc;
+      stats.innerHTML = [["Taps", pad(moves)], ["Time", tStr]]
+        .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
+      stats.style.display = "flex"; share.style.display = "none"; friends.style.display = "none";
+      $("winNext").style.display = "";
+      setTimeout(()=>{ win.classList.add("show"); }, 520);
+      return;
+    }
 
     if (ctx.type === "daily"){
       /* resultaat eerst opslaan, dan het resultaatscherm opbouwen */
@@ -1629,7 +1757,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       /* vrij spel: zelfde propere statblokjes als de daily */
       $("winTitle").textContent = onpar ? "On par!" : "Solved";
       $("winSub").textContent =
-        (ctx.fragile ? "Porcelain" : "Free play") + " · " + cfg.label + " · " + cfg.desc;
+        "Free play · " + cfg.label + " · " + cfg.desc;
       stats.innerHTML = [["Moves", pad(moves)], ["Par", pad(par)], ["Time", tStr], ["Hints", hintsUsed]]
         .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
       stats.style.display = "flex"; share.style.display = "none"; friends.style.display = "none";
@@ -1680,6 +1808,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   $("resetBtn").addEventListener("click", reset);
   $("hintIconBtn").addEventListener("click", showHint);
   $("newBtn").addEventListener("click", newFreePuzzle);
+  $("eyeBtn").addEventListener("click", ()=>{ const on = board.classList.toggle("reveal"); $("eyeBtn").classList.toggle("on", on); });
 
   /* ================= popups: backdrop + klik-buiten-sluiten ================= */
   function openSheet(id){
@@ -1731,6 +1860,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function stopDemo(){ if (demoTimer) clearInterval(demoTimer); demoTimer = null; }
   $("helpBtn").addEventListener("click", ()=>openSheet("help"));
   $("helpClose").addEventListener("click", closeSheets);
+  $("helpCloseX").addEventListener("click", closeSheets);
 
   /* voortgang bewaren als de app sluit tijdens een daily */
   window.addEventListener("pagehide", saveProg);
@@ -1931,7 +2061,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       if (document.visibilityState === "hidden") return;
       t += 0.016;
       ctx2.clearRect(0, 0, W, H);
-      const warm = !document.body.classList.contains("fragile");
+      const warm = !document.body.classList.contains("numbers");
       const rgb = warm ? "255,213,140" : "190,226,232";
       const px = W * 0.26, py = -H * 0.12;          /* lichtbron linksboven */
       const L = Math.hypot(W, H) * 1.6;
