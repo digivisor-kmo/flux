@@ -1103,7 +1103,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.6.0";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.6.1";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1155,7 +1155,29 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     return { state: st, link };
   }
 
-  const dayKeyNow = () => new Date().toISOString().slice(0,10);
+  /* De "FLUX-dag" wisselt om 09:00 Belgische tijd. Definitie MOET identiek zijn aan
+     de edge function submit-daily (anders klopt de serververificatie niet). */
+  const DAILY_RESET_HOUR = 9;                 // 09:00 Europe/Brussels
+  function fluxDay(date){
+    const p = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", hourCycle: "h23"
+    }).formatToParts(date || new Date());
+    const g = t => p.find(x => x.type === t).value;
+    let y = +g("year"), m = +g("month"), d = +g("day");
+    const h = +g("hour");
+    if (h < DAILY_RESET_HOUR){                // vóór 09:00 hoort bij de vorige dag
+      const dt = new Date(Date.UTC(y, m - 1, d)); dt.setUTCDate(dt.getUTCDate() - 1);
+      return dt.toISOString().slice(0, 10);
+    }
+    return y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  }
+  function prevDay(key){
+    const [Y, M, D] = key.split("-").map(Number);
+    const dt = new Date(Date.UTC(Y, M - 1, D)); dt.setUTCDate(dt.getUTCDate() - 1);
+    return dt.toISOString().slice(0, 10);
+  }
+  const dayKeyNow = () => fluxDay();
   let todayKey = dayKeyNow();
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2,"0");
@@ -1360,8 +1382,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function bumpStreak(){
     const last = store.get("flux-streak-date", null);
     if (last === todayKey) return;
-    const y = new Date(); y.setDate(y.getDate()-1);
-    const yKey = y.toISOString().slice(0,10);
+    const yKey = prevDay(todayKey);
     store.set("flux-streak", last === yKey ? store.get("flux-streak",0) + 1 : 1);
     store.set("flux-streak-date", todayKey);
   }
@@ -2046,10 +2067,10 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       .eq("user_id", uid).order("day", { ascending: false }).limit(90);
     if (days){
       let streak = 0;
-      const d = new Date();
       const have = new Set(days.map(r => r.day));
-      if (!have.has(todayKey)) d.setDate(d.getDate() - 1);   /* vandaag telt pas na oplossen */
-      while (have.has(d.toISOString().slice(0,10))){ streak++; d.setDate(d.getDate() - 1); }
+      let key = todayKey;
+      if (!have.has(key)) key = prevDay(key);   /* vandaag telt pas na oplossen */
+      while (have.has(key)){ streak++; key = prevDay(key); }
       store.set("flux-streak", streak);
     }
     refreshVandaag();
@@ -2112,11 +2133,19 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   refreshVandaag();
   refreshRanking();
 
-  /* live aftel-klok tot de echte reset (de "FLUX-dag" loopt op UTC).
+  /* live aftel-klok tot de echte reset (09:00 Belgische tijd).
      Toont uu:mm:ss en pikt de nieuwe dag op zodra de teller nul raakt. */
-  function nextDailyReset(){
-    const n = new Date();
-    return Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1, 0, 0, 0, 0);
+  function secsUntilReset(){
+    /* seconden tot de volgende 09:00 Brusselse tijd, op basis van de Brusselse wandklok */
+    const p = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Brussels", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+    }).formatToParts(new Date());
+    const g = t => +p.find(x => x.type === t).value;
+    const nowSec = g("hour") * 3600 + g("minute") * 60 + g("second");
+    const target = DAILY_RESET_HOUR * 3600;
+    let remain = target - nowSec;
+    if (remain <= 0) remain += 86400;
+    return remain;
   }
   function fmtHMS(ms){
     if (ms < 0) ms = 0;
@@ -2125,15 +2154,13 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   }
   function tickDailyCountdown(){
     const el = $("dailyCountdown"); if (!el) return;
-    const ms = nextDailyReset() - Date.now();
-    el.textContent = fmtHMS(ms);
-    if (ms <= 0){
-      const now = dayKeyNow();
-      if (now !== todayKey && !(ctx && curScreen === "game")){
-        todayKey = now;
-        if (session) syncFromServer();
-        refreshVandaag(); refreshRanking();
-      }
+    el.textContent = fmtHMS(secsUntilReset() * 1000);
+    /* nieuwe FLUX-dag opgepikt? (teller net gepasseerd of app kwam terug) */
+    const now = dayKeyNow();
+    if (now !== todayKey && !(ctx && curScreen === "game")){
+      todayKey = now;
+      if (session) syncFromServer();
+      refreshVandaag(); refreshRanking();
     }
   }
   tickDailyCountdown();
