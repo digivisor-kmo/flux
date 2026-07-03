@@ -466,6 +466,22 @@
   .tile.hint { z-index: 5; animation: hintPulse 1.15s ease-in-out infinite; outline: 3px solid var(--ink); outline-offset: 3px; }
   @keyframes hintPulse { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.05); } }
 
+  /* ===== Numbers-animaties: knop-indruk (bron) + omschakel-flip (partners) ===== */
+  .tile.ntap { z-index: 6; animation: ntap 0.40s cubic-bezier(0.34,1.5,0.64,1); }
+  @keyframes ntap {
+    0%   { transform: scale(1); }
+    26%  { transform: scale(0.84); }
+    60%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+  .tile.nflip { z-index: 7; animation: nflip 0.48s cubic-bezier(0.45,0,0.3,1); }
+  @keyframes nflip {
+    0%   { transform: perspective(560px) rotateY(0); }
+    46%  { transform: perspective(560px) rotateY(87deg); filter: brightness(1.4); }
+    56%  { filter: brightness(1.4); }
+    100% { transform: perspective(560px) rotateY(0); filter: brightness(1); }
+  }
+
   /* ================= Numbers-modus: genummerde tegels, groen (aan) / rood (uit) ================= */
   .tile.ntile.on  { background: var(--c0); }   /* geactiveerd = groen */
   .tile.ntile.off { background: var(--c1); }   /* niet geactiveerd = rood */
@@ -688,7 +704,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .tile, .win { transition-duration: 0.01ms !important; }
-    .tile.enter, .tile.pop, .tile.ripple, .tile.wave, .tile.hint { animation: none !important; opacity: 1 !important; }
+    .tile.enter, .tile.pop, .tile.ripple, .tile.wave, .tile.hint, .tile.ntap, .tile.nflip { animation: none !important; opacity: 1 !important; }
   }
 </style>
 </head>
@@ -1103,7 +1119,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.7.0";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.7.1";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1694,8 +1710,14 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     }
     if (animate){
       void t.offsetWidth;
-      t.classList.add(isSource ? "pop" : "ripple");
-      setTimeout(()=>t.classList.remove("pop","ripple"), 480);
+      if (isNumbers()){
+        /* Numbers: aangetikte tegel = knop-indruk (ntap), partners = omschakel-flip (nflip) */
+        t.classList.add(isSource ? "ntap" : "nflip");
+        setTimeout(()=>t.classList.remove("ntap","nflip"), 520);
+      } else {
+        t.classList.add(isSource ? "pop" : "ripple");
+        setTimeout(()=>t.classList.remove("pop","ripple"), 480);
+      }
     }
   }
   function renderAll(){ for(let i=0;i<state.length;i++) paint(i,false,false); }
@@ -1728,8 +1750,8 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     /* Numbers: tik schakelt de verborgen partners om; de tegel zelf verandert niet */
     if (isNumbers()){
       for (const j of nLink[i]) state[j] ^= 1;
-      paint(i, true, false);                       /* aangetikte tegel: lichte lift */
-      nLink[i].forEach(j => paint(j, true, true)); /* partners: klappen om */
+      paint(i, true, true);                        /* aangetikte tegel: knop-indruk (bron) */
+      nLink[i].forEach(j => paint(j, true, false)); /* partners: omschakel-flip */
       moves++; movesEl.textContent = pad(moves);
       haptic(8); playTick();
       if (state.every(v => v === 1)) showWin();
