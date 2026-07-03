@@ -321,10 +321,11 @@
     color: var(--muted); padding: 10px 4px; transition: color 0.25s ease;
   }
   .modetoggle button.on { color: var(--ink); }
-  /* toggle + kleiner ?-bolletje ernaast, samen gecentreerd */
-  .moderow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 22px; }
-  .moderow .modetoggle { margin: 0; }
-  .icon.help-mini { width: 32px; height: 32px; font-size: 14px; flex: none; }
+  /* toggle blijft exact centraal (auto-kolom tussen twee gelijke 1fr-kolommen);
+     het ?-bolletje staat er los rechts naast zonder de centrering te verschuiven */
+  .moderow { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-top: 22px; }
+  .moderow .modetoggle { grid-column: 2; margin: 0; }
+  .icon.help-mini { grid-column: 3; justify-self: start; margin-left: 10px; width: 32px; height: 32px; font-size: 14px; }
 
   /* ================= Porselein: barsten en breken ================= */
   .tile .cr {
@@ -1043,7 +1044,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.4.0";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.4.1";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
