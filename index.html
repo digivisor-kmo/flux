@@ -499,16 +499,31 @@
 
   .frow { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
   .frow:last-child { border-bottom: none; }
-  .frow .avatar {
+  .frow .avatar, .flrow .avatar {
     width: 34px; height: 34px; border-radius: 50%; flex: none;
     display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 14px; color: #fff;
     box-shadow: 0 3px 6px -2px rgba(var(--sh),0.3), inset 1px 1px 0 rgba(255,255,255,0.3);
     position: relative; overflow: hidden;
   }
-  .frow .avatar::before { content:""; position:absolute; inset:0;
+  .frow .avatar::before, .flrow .avatar::before { content:""; position:absolute; inset:0;
     background: linear-gradient(135deg, rgba(255,255,255,0.25) 0 49.3%, rgba(0,0,0,0.1) 50.4% 100%); }
-  .frow .avatar span { position: relative; z-index: 1; }
+  .frow .avatar span, .flrow .avatar span { position: relative; z-index: 1; }
+
+  /* vriendenlijst in de connect-sheet: rij met naam, code en verwijderknop */
+  .flrow { display: flex; align-items: center; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .flrow:last-child { border-bottom: none; }
+  .flrow .avatar { width: 30px; height: 30px; font-size: 12px; }
+  .flrow .name { flex: 1; font-weight: 700; font-size: 13.5px; }
+  .flrow .name small { display: block; font-family: var(--mono); font-size: 9.5px; color: var(--muted); font-weight: 400; margin-top: 2px; letter-spacing: 0.06em; }
+  .flrow .rm {
+    flex: none; font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: #C74B33;
+    background: rgba(199,75,51,0.08); border: 1px solid rgba(199,75,51,0.22);
+    border-radius: 9px; padding: 6px 11px; cursor: pointer; transition: transform 0.15s ease;
+  }
+  .flrow .rm:active { transform: scale(0.94); }
+  .flrow .rm:disabled { opacity: 0.5; }
+  .flempty { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; padding: 4px 0; line-height: 1.5; }
   .frow .name { font-weight: 700; font-size: 14px; flex: 1; }
   .frow .name small { display: block; font-family: var(--mono); font-size: 9.5px; color: var(--muted); font-weight: 400; margin-top: 2px; letter-spacing: 0.06em; }
   .frow .score { font-family: var(--mono); font-size: 12px; font-weight: 700; text-align: right; }
@@ -629,7 +644,7 @@
         <span class="k">Ranglijst · Daily Sprint</span>
         <div id="ranking" style="margin-top:6px"></div>
       </div>
-      <div class="notice" id="rankNotice">Ranglijst op tijd · pogingen en hints tellen mee</div>
+      <div class="notice" id="rankNotice">Eerst wie het dichtst bij par speelt · dan de snelste tijd</div>
     </div>
   </section>
 
@@ -730,6 +745,11 @@
       <input id="codeInput" placeholder="FLX-····" maxlength="9" autocomplete="off">
       <button class="btn small ghost" type="submit">Voeg toe</button>
     </form>
+  </div>
+
+  <div class="csec">
+    <span class="ck">Jouw vrienden</span>
+    <div id="friendList"></div>
   </div>
 </div>
 
@@ -921,7 +941,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v0.10.5";                    /* omhoog bij elke feature-push */
+  const BUILD = "v0.11.0";                    /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1111,16 +1131,41 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   const AV_COLS = ["var(--c0)","var(--c1)","var(--c2)"];
 
   function frowHTML(r, i){
+    /* par-relatief is de rangschikking; tijd staat als hoofdgetal, parstatus eronder */
+    const parLabel = r.onpar ? "op par" : "+" + r.over + " boven par";
     return '<div class="frow' + (r.me ? " me" : "") + '">' +
       '<span class="rank">' + (i+1) + '</span>' +
       '<span class="avatar" style="background:' + AV_COLS[FluxCore.hashStr(r.code || r.name)%3] + '"><span>' + r.name[0].toUpperCase() + '</span></span>' +
       '<span class="name">' + r.name + '</span>' +
-      '<span class="score' + (i===0 ? " good" : "") + '">' + r.t +
-      '<small>' + r.att + (r.att === 1 ? ' poging' : ' pogingen') + ' · ' + r.h + (r.h === 1 ? ' hint' : ' hints') + '</small></span>' +
+      '<span class="score' + (r.onpar ? " good" : "") + '">' + r.t +
+      '<small>' + parLabel + ' · ' + r.h + (r.h === 1 ? ' hint' : ' hints') + '</small></span>' +
       '</div>';
   }
 
   /* ranglijst: echt bij login, anders een uitnodiging om in te loggen */
+  /* haalt jouw + vrienden-resultaten van vandaag op (RLS filtert al) en
+     sorteert par-relatief: minst boven par eerst, tijd als tiebreaker (sectie 8) */
+  async function fetchDailyRows(){
+    if (!(sb && session)) return null;
+    const { data, error } = await sb.from("daily_results")
+      .select("time_ms, moves, par, hints, attempts, user_id, profiles(name, code)")
+      .eq("day", todayKey);
+    if (error) return null;
+    const rows = (data || []).map(r => {
+      const over = Math.max(0, (r.moves || 0) - (r.par || 0));
+      return {
+        name: r.user_id === session.user.id ? "Jij" : (r.profiles && r.profiles.name) || "Speler",
+        code: (r.profiles && r.profiles.code) || "",
+        over: over, onpar: over === 0,
+        timeMs: r.time_ms, t: fmtTime(r.time_ms),
+        att: r.attempts, h: r.hints,
+        me: r.user_id === session.user.id
+      };
+    });
+    rows.sort((a,b) => (a.over - b.over) || (a.timeMs - b.timeMs));
+    return rows;
+  }
+
   async function refreshRanking(){
     const el = $("ranking");
     if (!(sb && session)){
@@ -1129,17 +1174,8 @@ if (typeof module !== "undefined") module.exports = FluxCore;
         '<span class="name">Log in met Google<small>om vrienden toe te voegen en mee te doen</small></span><span class="score"></span></div>';
       return;
     }
-    const { data, error } = await sb.from("daily_results")
-      .select("time_ms, moves, hints, attempts, user_id, profiles(name, code)")
-      .eq("day", todayKey);
-    if (error){ el.innerHTML = '<div class="notice">ranglijst laden mislukt</div>'; return; }
-    const rows = (data || []).map(r => ({
-      name: r.user_id === session.user.id ? "Jij" : (r.profiles && r.profiles.name) || "Speler",
-      code: (r.profiles && r.profiles.code) || "",
-      t: fmtTime(r.time_ms), att: r.attempts, h: r.hints,
-      me: r.user_id === session.user.id
-    }));
-    rows.sort((a,b) => a.t.localeCompare(b.t));
+    const rows = await fetchDailyRows();
+    if (rows === null){ el.innerHTML = '<div class="notice">ranglijst laden mislukt</div>'; return; }
     el.innerHTML = rows.map(frowHTML).join("");
     if (!rows.some(r => r.me)){
       el.innerHTML += '<div class="frow me"><span class="rank">–</span>' +
@@ -1170,7 +1206,41 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     if (error){ input.value = ""; input.placeholder = "CODE NIET GEVONDEN"; return; }
     input.value = ""; input.placeholder = "FLX-····";
     refreshRanking();
-    closeSheets();
+    loadFriendList();   /* sheet blijft open zodat de nieuwe vriend meteen in de lijst verschijnt */
+  });
+
+  /* ================= vriendenlijst + verwijderen ================= */
+  async function loadFriendList(){
+    const box = $("friendList");
+    if (!box) return;
+    if (!(sb && session)){ box.innerHTML = '<div class="flempty">Log in om vrienden te beheren.</div>'; return; }
+    box.innerHTML = '<div class="flempty">laden…</div>';
+    const { data, error } = await sb.from("friends")
+      .select("friend_id, profiles!friends_friend_id_fkey(name, code)")
+      .eq("user_id", session.user.id);
+    if (error){ box.innerHTML = '<div class="flempty">vrienden laden mislukt</div>'; return; }
+    const list = (data || []).filter(r => r.profiles);
+    if (list.length === 0){ box.innerHTML = '<div class="flempty">Nog geen vrienden. Voeg iemand toe met hun code.</div>'; return; }
+    list.sort((a,b) => (a.profiles.name || "").localeCompare(b.profiles.name || ""));
+    box.innerHTML = list.map(r => {
+      const name = r.profiles.name || "Speler", code = r.profiles.code || "";
+      const av = AV_COLS[FluxCore.hashStr(code || name) % 3];
+      return '<div class="flrow">' +
+        '<span class="avatar" style="background:' + av + '"><span>' + name[0].toUpperCase() + '</span></span>' +
+        '<span class="name">' + name + '<small>' + code + '</small></span>' +
+        '<button class="rm" data-id="' + r.friend_id + '">Verwijder</button>' +
+        '</div>';
+    }).join("");
+  }
+
+  $("friendList").addEventListener("click", async e => {
+    const btn = e.target.closest(".rm");
+    if (!btn || !(sb && session)) return;
+    btn.disabled = true; btn.textContent = "…";
+    const { error } = await sb.rpc("remove_friend", { other: btn.dataset.id });
+    if (error){ btn.disabled = false; btn.textContent = "Verwijder"; return; }
+    loadFriendList();
+    refreshRanking();
   });
 
   /* ================= game-engine (één instantie) ================= */
@@ -1410,7 +1480,10 @@ if (typeof module !== "undefined") module.exports = FluxCore;
         new Date().toLocaleDateString("nl-BE", { day: "2-digit", month: "long" });
       stats.innerHTML = [["Tijd", tStr], ["Zetten", pad(moves)], ["Pogingen", attempts], ["Hints", hintsUsed]]
         .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
-      friends.innerHTML = '<div class="fh">Vrienden vandaag</div>' + dailyRows().map(frowHTML).join("");
+      friends.innerHTML = '<div class="fh">Vrienden vandaag</div>';
+      fetchDailyRows().then(rows => {
+        if (rows) friends.innerHTML = '<div class="fh">Vrienden vandaag</div>' + rows.map(frowHTML).join("");
+      });
       stats.style.display = "flex"; friends.style.display = "block"; share.style.display = "none";
     } else {
       /* vrij spel: zelfde propere statblokjes als de daily */
@@ -1460,6 +1533,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     $(id).classList.add("show");
     $("backdrop").classList.add("show");
     if (id === "help") startDemo();
+    if (id === "connect") loadFriendList();
   }
   function closeSheets(){
     ["help","connect"].forEach(i => $(i).classList.remove("show"));
