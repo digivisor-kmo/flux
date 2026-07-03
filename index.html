@@ -519,6 +519,30 @@
     transition: transform 0.15s ease, background 0.15s ease;
   }
   .sheetclose:active { transform: scale(0.9); background: rgba(42,33,24,0.12); }
+
+  /* ================= settings-sheet ================= */
+  .setgroup { padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--line); }
+  .setgroup:first-of-type { border-top: none; padding-top: 6px; margin-top: 6px; }
+  .setgroup .ck { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px; }
+  .setrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; }
+  .setrow + .setrow { border-top: 1px solid var(--line); }
+  .setlabel { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .setlabel small { display: block; font-family: var(--mono); font-size: 9px; font-weight: 400; color: var(--muted); margin-top: 2px; letter-spacing: 0.04em; }
+  .setrow.disabled .setlabel { color: var(--muted); }
+  .switch { flex: none; width: 46px; height: 28px; border-radius: 999px; border: none; padding: 0; position: relative; cursor: pointer;
+    background: rgba(42,33,24,0.18); transition: background 0.22s ease; }
+  .switch .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 3px rgba(var(--sh),0.35); transition: transform 0.22s cubic-bezier(0.34,1.4,0.64,1); }
+  .switch[aria-checked="true"] { background: var(--c0); }
+  .switch[aria-checked="true"] .knob { transform: translateX(18px); }
+  .switch:disabled { opacity: 0.45; cursor: default; }
+  .setbtn { width: 100%; margin-top: 10px; }
+  .btn.danger { background: rgba(199,75,51,0.10); color: #C74B33; border: 1px solid rgba(199,75,51,0.28); box-shadow: none; }
+  .btn.dangersolid { background: #C74B33; color: #fff; border: 1px solid rgba(255,255,255,0.30); box-shadow: 0 4px 10px -2px rgba(199,75,51,0.4); }
+  .delconfirm { margin-top: 12px; padding: 14px; border-radius: 14px; background: rgba(199,75,51,0.07); border: 1px solid rgba(199,75,51,0.2); }
+  .delconfirm p { font-family: var(--font); font-size: 12.5px; color: var(--ink); line-height: 1.5; margin-bottom: 12px; }
+  .delactions { display: flex; gap: 8px; }
+  .delactions .btn { flex: 1; }
   .win p { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
   .win .share { display: grid; gap: 4px; margin-bottom: 18px; }
   .win .share i { width: 15px; height: 15px; border-radius: 4px; display: block; position: relative; overflow: hidden;
@@ -713,8 +737,8 @@
       <div class="wordmark wm2"></div>
       <div class="tbgroup">
         <span class="tbname" id="userName"></span>
-        <button class="icon" id="logoutIcon" aria-label="Log out" style="display:none">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><path d="M17 8l4 4-4 4"/><path d="M21 12H10"/></svg>
+        <button class="icon" id="settingsBtn" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
       </div>
     </div>
@@ -837,6 +861,41 @@
       <button class="btn small ghost" type="submit">Add</button>
     </form>
     <div class="notice" id="addStatus" style="margin-top:12px;display:none"></div>
+  </div>
+</div>
+
+<!-- settings-sheet -->
+<div class="win sheet" id="settings" role="dialog" aria-labelledby="settingsTitle">
+  <button class="sheetclose" id="settingsCloseX" aria-label="Close">×</button>
+  <h3 id="settingsTitle">Settings</h3>
+
+  <div class="setgroup">
+    <span class="ck">Preferences</span>
+    <div class="setrow">
+      <span class="setlabel">Sound</span>
+      <button class="switch" id="swSound" role="switch" aria-checked="true" aria-label="Sound"><span class="knob"></span></button>
+    </div>
+    <div class="setrow">
+      <span class="setlabel">Haptics</span>
+      <button class="switch" id="swHaptics" role="switch" aria-checked="true" aria-label="Haptics"><span class="knob"></span></button>
+    </div>
+    <div class="setrow disabled">
+      <span class="setlabel">Notifications<small>Coming soon</small></span>
+      <button class="switch" id="swNotify" role="switch" aria-checked="false" aria-label="Notifications" disabled><span class="knob"></span></button>
+    </div>
+  </div>
+
+  <div class="setgroup" id="accountGroup">
+    <span class="ck">Account</span>
+    <button class="btn ghost setbtn" id="logoutBtn">Log out</button>
+    <button class="btn danger setbtn" id="deleteBtn">Delete account</button>
+    <div class="delconfirm" id="delConfirm" style="display:none">
+      <p>This permanently deletes your account, your friends and all your results. This can't be undone.</p>
+      <div class="delactions">
+        <button class="btn ghost" id="delCancel">Cancel</button>
+        <button class="btn dangersolid" id="delYes">Delete</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1044,7 +1103,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.5.0";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.6.0";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1175,6 +1234,50 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   }
   $("symBtn").addEventListener("click", ()=>{
     symbolsOn = !symbolsOn; store.set("flux-symbols", symbolsOn); applySymbols();
+  });
+
+  /* ================= voorkeuren: geluid + haptiek ================= */
+  let soundOn = store.get("flux-sound", true);
+  let hapticsOn = store.get("flux-haptics", true);
+  function haptic(pattern){ if (hapticsOn && navigator.vibrate) navigator.vibrate(pattern); }
+
+  /* lichte WebAudio: korte tik bij een zet, zacht akkoord bij winst */
+  let audioCtx = null;
+  function actx(){
+    if (!audioCtx){ try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ audioCtx = null; } }
+    return audioCtx;
+  }
+  function beep(freq, dur, when, gain){
+    const ac = actx(); if (!ac) return;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o.frequency.value = freq;
+    const t = ac.currentTime + (when || 0);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain || 0.05, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.09));
+    o.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t + (dur || 0.09) + 0.02);
+  }
+  function playTick(){ if (soundOn) beep(520, 0.07, 0, 0.045); }
+  function playWin(){ if (soundOn) [523.25, 659.25, 783.99].forEach((f,i)=>beep(f, 0.5, i*0.09, 0.05)); }
+
+  function applySettingsUI(){
+    $("swSound").setAttribute("aria-checked", soundOn ? "true" : "false");
+    $("swHaptics").setAttribute("aria-checked", hapticsOn ? "true" : "false");
+  }
+  $("swSound").addEventListener("click", ()=>{ soundOn = !soundOn; store.set("flux-sound", soundOn); applySettingsUI(); if (soundOn) playTick(); });
+  $("swHaptics").addEventListener("click", ()=>{ hapticsOn = !hapticsOn; store.set("flux-haptics", hapticsOn); applySettingsUI(); if (hapticsOn) haptic(14); });
+  $("settingsBtn").addEventListener("click", ()=>openSheet("settings"));
+  $("settingsCloseX").addEventListener("click", closeSheets);
+  $("logoutBtn").addEventListener("click", ()=>{ closeSheets(); logout(); });
+  $("deleteBtn").addEventListener("click", ()=>{ $("delConfirm").style.display = ""; });
+  $("delCancel").addEventListener("click", ()=>{ $("delConfirm").style.display = "none"; });
+  $("delYes").addEventListener("click", async ()=>{
+    if (!(sb && session)){ return; }
+    const b = $("delYes"); b.disabled = true; b.textContent = "Deleting…";
+    try { await sb.functions.invoke("delete-account", { body: {} }); } catch(e){}
+    try { await sb.auth.signOut(); } catch(e){}
+    location.reload();
   });
 
   /* ================= daily puzzels (deterministisch) ================= */
@@ -1542,7 +1645,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       paint(i, true, false);                       /* aangetikte tegel: lichte lift */
       nLink[i].forEach(j => paint(j, true, true)); /* partners: klappen om */
       moves++; movesEl.textContent = pad(moves);
-      if (navigator.vibrate) navigator.vibrate(8);
+      haptic(8); playTick();
       if (state.every(v => v === 1)) showWin();
       return;
     }
@@ -1551,7 +1654,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     clearHint();
     aff.forEach(j => paint(j, true, j===i));
     moves++; movesEl.textContent = pad(moves);
-    if (navigator.vibrate) navigator.vibrate(9);
+    haptic(9); playTick();
     if (FluxCore.isSolved(state, TARGET)) showWin();
     else saveProg();
   }
@@ -1669,6 +1772,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   let shareText = "";
   function showWin(){
     locked = true; stopTimer(); clearHint();
+    haptic([18,40,26]); playWin();
     tiles.forEach((t,i)=>{
       const r=Math.floor(i/cfg.size), c=i%cfg.size;
       t.style.animationDelay=((r+c)*45)+"ms";
@@ -1778,9 +1882,15 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       if (session && !myCode) loadProfile().then(renderAuth);   /* code alsnog ophalen indien nodig */
       $("codeInput").value = ""; $("addStatus").style.display = "none";
     }
+    if (id === "settings"){
+      applySettingsUI();
+      $("accountGroup").style.display = (sb && session) ? "" : "none";
+      $("delConfirm").style.display = "none";
+      $("delYes").disabled = false; $("delYes").textContent = "Delete";
+    }
   }
   function closeSheets(){
-    ["help","connect"].forEach(i => $(i).classList.remove("show"));
+    ["help","connect","settings"].forEach(i => $(i).classList.remove("show"));
     $("backdrop").classList.remove("show");
     stopDemo();
   }
@@ -1884,12 +1994,10 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       const meta = (session.user && session.user.user_metadata) || {};
       const fallback = (meta.name || meta.full_name || (session.user && session.user.email) || "").split(" ")[0].split("@")[0];
       $("userName").textContent = (myProfile && myProfile.name ? myProfile.name : fallback).split(" ")[0];
-      $("logoutIcon").style.display = "";
       $("addFriendFab").style.display = "";
     } else {
       box.style.display = "";
       $("userName").textContent = "";
-      $("logoutIcon").style.display = "none";
       $("addFriendFab").style.display = "none";
       box.innerHTML =
         '<div class="card"><span class="k">Account</span>' +
@@ -1901,7 +2009,6 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     /* connect-popup meebijwerken */
     $("myCode").textContent = myCode || "—";
   }
-  $("logoutIcon").addEventListener("click", logout);
 
   async function loadProfile(){
     if (!(sb && session)) return;
@@ -2000,6 +2107,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   setMode(mode);
   applySymbols();
+  applySettingsUI();
   renderAuth();
   refreshVandaag();
   refreshRanking();
