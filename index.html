@@ -255,11 +255,14 @@
   .fab svg { width: 26px; height: 26px; display: block; }
   .fab:active { transform: scale(0.93); }
   /* extra bodemruimte zodat de laatste ranglijst-rijen niet onder de FAB verdwijnen */
-  /* vriendenscherm: content op natuurlijke hoogte zodat het ENKEL scrollt wanneer de
-     lijst te lang is (flex:1 zou het altijd laten passen en dus nooit laten scrollen).
-     Bodempadding = net genoeg om de zwevende +-knop vrij te houden onderaan. */
-  #scr-vrienden .content { flex: 0 0 auto; }
-  #scr-vrienden { padding-bottom: calc(152px + env(safe-area-inset-bottom)); }
+  /* vriendenscherm: de header (logo + uitloggen) blijft vast staan; enkel de content
+     eronder scrollt, en dan nog enkel wanneer de lijst te lang is.
+     De bodempadding op de content houdt de laatste rij vrij van de zwevende +-knop. */
+  #scr-vrienden { overflow: hidden; padding-bottom: 0; }
+  #scr-vrienden .content {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(152px + env(safe-area-inset-bottom));
+  }
 
   /* ontkoppelen per rij: subtiel break-link icoon → bevestigen (Ontkoppelen + annuleren) */
   .frow .unlinkbtn {
@@ -1076,7 +1079,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.4.6";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.4.7";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
