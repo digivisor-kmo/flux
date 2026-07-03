@@ -503,17 +503,17 @@
   }
   .board.n4 .tile .num { font-size: clamp(13px, 5vw, 22px); }
   .board.n5 .tile .num { font-size: clamp(11px, 4vw, 18px); }
-  /* bedrading groot over de hele tegel, goed leesbaar */
+  /* bedrading: doeltegels onder elkaar (past netjes in een vierkant, blijft van de randen) */
   .tile .wire {
     position: absolute; inset: 0; z-index: 4; display: none; pointer-events: none;
-    align-items: center; justify-content: center; text-align: center; border-radius: inherit;
-    background: rgba(20,16,10,0.60); color: #fff; padding: 0 4px;
+    flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    border-radius: inherit; background: rgba(18,14,9,0.72); color: #fff;
     font-family: var(--mono); font-weight: 700; letter-spacing: 0.01em;
-    font-size: clamp(15px, 6.5vw, 26px);
   }
   .board.reveal .tile .wire { display: flex; }
-  .board.n4 .tile .wire { font-size: clamp(12px, 5vw, 20px); }
-  .board.n5 .tile .wire { font-size: clamp(10px, 4vw, 15px); }
+  .tile .wire span { display: block; line-height: 1.08; font-size: clamp(15px, 6vw, 24px); }
+  .board.n4 .tile .wire span { font-size: clamp(13px, 4.6vw, 19px); }
+  .board.n5 .tile .wire span { font-size: clamp(12px, 3.8vw, 16px); }
 
   .status { display: flex; align-items: center; justify-content: center; gap: 26px; margin-top: 30px; }
   .stat { text-align: center; min-width: 62px; }
@@ -699,7 +699,7 @@
 
     <div class="content">
       <div class="dailyhero" id="dailyHero"></div>
-      <div class="notice">New daily at midnight · same puzzle for everyone</div>
+      <div class="notice">Same puzzle for everyone · next puzzle in <span id="dailyCountdown">--:--:--</span></div>
     </div>
   </section>
 
@@ -1072,7 +1072,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.4.3";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.4.4";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1528,7 +1528,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     t.style.visibility = "";   /* herstel na een eerdere breuk */
     if (isNumbers()){
       t.className = "tile ntile " + (state[i] ? "on" : "off");
-      const w = t.querySelector(".wire"); if (w) w.textContent = nLink[i].map(j => j+1).join("·");
+      const w = t.querySelector(".wire"); if (w) w.innerHTML = nLink[i].map(j => "<span>" + (j+1) + "</span>").join("");
     } else {
       let cls = "tile s"+state[i];
       if (fragileActive() && cracks[i] > 0) cls += " c" + Math.min(cracks[i], 2);
@@ -2074,6 +2074,33 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   renderAuth();
   refreshVandaag();
   refreshRanking();
+
+  /* live aftel-klok tot de echte reset (de "FLUX-dag" loopt op UTC).
+     Toont uu:mm:ss en pikt de nieuwe dag op zodra de teller nul raakt. */
+  function nextDailyReset(){
+    const n = new Date();
+    return Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1, 0, 0, 0, 0);
+  }
+  function fmtHMS(ms){
+    if (ms < 0) ms = 0;
+    const s = Math.floor(ms / 1000);
+    return pad(Math.floor(s / 3600)) + ":" + pad(Math.floor((s % 3600) / 60)) + ":" + pad(s % 60);
+  }
+  function tickDailyCountdown(){
+    const el = $("dailyCountdown"); if (!el) return;
+    const ms = nextDailyReset() - Date.now();
+    el.textContent = fmtHMS(ms);
+    if (ms <= 0){
+      const now = dayKeyNow();
+      if (now !== todayKey && !(ctx && curScreen === "game")){
+        todayKey = now;
+        if (session) syncFromServer();
+        refreshVandaag(); refreshRanking();
+      }
+    }
+  }
+  tickDailyCountdown();
+  setInterval(tickDailyCountdown, 1000);
 
   /* Net terug van Google-login? Blijf op het vriendenscherm i.p.v. naar home te
      springen. De OAuth-redirect herlaadt de app op de default-tab; deze check
