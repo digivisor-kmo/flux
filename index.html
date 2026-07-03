@@ -347,43 +347,6 @@
   .moderow .modetoggle { grid-column: 2; margin: 0; }
   .icon.help-mini { grid-column: 3; justify-self: start; margin-left: 10px; width: 32px; height: 32px; font-size: 14px; }
 
-  /* ================= Porselein: barsten en breken ================= */
-  .tile .cr {
-    position: absolute; inset: 0; z-index: 2; pointer-events: none;
-    opacity: 0; transition: opacity 0.22s ease;
-    mix-blend-mode: multiply; background-size: 100% 100%;
-  }
-  /* barsten in twee lagen: wit randje dat het licht vangt (offset naar rechtsonder)
-     onder een donkere groef; getande lijnen met taps toelopende vertakkingen */
-  .tile.c1 .cr {
-    opacity: 0.9;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><g fill='none' stroke-linecap='round'><g stroke='rgba(255,255,255,0.55)' stroke-width='1.3' transform='translate(0.45,0.55)'><path d='M22.5 4 L19.8 8.5 L21.6 12.2 L19.4 16.8 L23.2 23.5'/><path d='M19.4 16.8 L14.8 18.6 L11.2 18.2'/></g><g stroke='rgba(26,20,14,0.68)'><path stroke-width='1.0' d='M22.5 4 L19.8 8.5 L21.6 12.2 L19.4 16.8'/><path stroke-width='0.75' d='M19.4 16.8 L23.2 23.5'/><path stroke-width='0.6' d='M19.4 16.8 L14.8 18.6 L11.2 18.2'/><path stroke-width='0.35' d='M21.6 12.2 L24.4 10.6'/></g></g></svg>");
-  }
-  .tile.c2 .cr {
-    opacity: 1;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><g fill='none' stroke-linecap='round'><g stroke='rgba(255,255,255,0.55)' stroke-width='1.3' transform='translate(0.45,0.55)'><path d='M22.5 4 L19.8 8.5 L21.6 12.2 L19.4 16.8 L23.2 23.5 L21.4 29.5 L23 34.5'/><path d='M19.4 16.8 L14.8 18.6 L9.4 17.8 L5.2 19.6'/><path d='M19.4 16.8 L15.6 12.4 L13.8 8.2'/><path d='M23.2 23.5 L28.6 26 L33.4 25.4'/></g><g stroke='rgba(26,20,14,0.72)'><path stroke-width='1.1' d='M22.5 4 L19.8 8.5 L21.6 12.2 L19.4 16.8 L23.2 23.5'/><path stroke-width='0.8' d='M23.2 23.5 L21.4 29.5 L23 34.5'/><path stroke-width='0.7' d='M19.4 16.8 L14.8 18.6 L9.4 17.8'/><path stroke-width='0.4' d='M9.4 17.8 L5.2 19.6'/><path stroke-width='0.6' d='M19.4 16.8 L15.6 12.4 L13.8 8.2'/><path stroke-width='0.6' d='M23.2 23.5 L28.6 26 L33.4 25.4'/><path stroke-width='0.35' d='M21.6 12.2 L26.2 10 L29.8 10.4'/><path stroke-width='0.3' d='M14.8 18.6 L13.2 23.2'/><path stroke-width='0.3' d='M21.4 29.5 L17.6 31.8'/></g></g></svg>");
-  }
-  .tile.broken { z-index: 7; }
-  .tile.broken .cr { opacity: 1;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><g fill='none' stroke-linecap='round'><g stroke='rgba(255,255,255,0.6)' stroke-width='1.4' transform='translate(0.5,0.6)'><path d='M22.5 4 L19.8 8.5 L21.6 12.2 L19.4 16.8 L23.2 23.5 L21.4 29.5 L23 36.5'/><path d='M19.4 16.8 L14.8 18.6 L9.4 17.8 L3.2 20.2'/><path d='M19.4 16.8 L15.6 12.4 L13.8 8.2 L14.6 3.5'/><path d='M23.2 23.5 L28.6 26 L34.4 25.4 L38.5 27'/><path d='M19.4 16.8 L25 14.2 L31 13.6 L36.5 11'/><path d='M14.8 18.6 L12.4 24.6 L7.2 29.8 L4 35'/></g><g stroke='rgba(26,20,14,0.8)'><path stroke-width='1.2' d='M22.5 4 L19.8 8.5 L21.6 12.2 L19.4 16.8 L23.2 23.5 L21.4 29.5 L23 36.5'/><path stroke-width='0.8' d='M19.4 16.8 L14.8 18.6 L9.4 17.8 L3.2 20.2'/><path stroke-width='0.7' d='M19.4 16.8 L15.6 12.4 L13.8 8.2 L14.6 3.5'/><path stroke-width='0.7' d='M23.2 23.5 L28.6 26 L34.4 25.4 L38.5 27'/><path stroke-width='0.6' d='M19.4 16.8 L25 14.2 L31 13.6 L36.5 11'/><path stroke-width='0.6' d='M14.8 18.6 L12.4 24.6 L7.2 29.8 L4 35'/><path stroke-width='0.35' d='M21.6 12.2 L26.2 10 L30.4 10.6'/><path stroke-width='0.3' d='M12.4 24.6 L16.8 26.4'/><path stroke-width='0.3' d='M25 14.2 L26.8 18.4'/><path stroke-width='0.3' d='M21.4 29.5 L17.2 32.4'/></g></g></svg>");
-  }
-  /* snappier breken, met per-tegel random richting/rotatie via CSS-variabelen */
-  .tile.broken { animation: shatter 0.5s cubic-bezier(0.5,0.05,0.7,0.2) 0.08s forwards; }
-  @keyframes shatter {
-    0%   { transform: none; opacity: 1; }
-    16%  { transform: translateX(var(--sx, 2px)) rotate(var(--pr, 3deg)) scale(1.07); }
-    100% { transform: translate(var(--bx, 0px), 48px) rotate(var(--br, -14deg)) scale(0.38); opacity: 0; }
-  }
-  /* korte schok door het hele bord op het moment van breken */
-  .boardshake { animation: bshake 0.32s ease; }
-  @keyframes bshake {
-    0%   { transform: none; }
-    22%  { transform: translate(3px,-2px) rotate(0.5deg); }
-    48%  { transform: translate(-3px,2px) rotate(-0.4deg); }
-    74%  { transform: translate(2px,1px); }
-    100% { transform: none; }
-  }
-
   /* ================= 3-2-1 aftelling ================= */
   .count {
     position: fixed; inset: 0; z-index: 60; display: none;
@@ -640,6 +603,15 @@
   .frow .name { font-weight: 700; font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .frow .name small { display: block; font-family: var(--mono); font-size: 9px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; margin-top: 2px; text-transform: none; overflow: hidden; text-overflow: ellipsis; }
   .frow .rank { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 16px; flex: none; text-align: center; }
+  /* medailles voor de top 3 */
+  .frow .rank.medal {
+    width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 2px rgba(var(--sh),0.32);
+  }
+  .frow .rank.m1 { background: linear-gradient(180deg,#F6CC55,#D99A2B); color: #5a3d00; }
+  .frow .rank.m2 { background: linear-gradient(180deg,#DCDCE2,#ADADB6); color: #3a3a42; }
+  .frow .rank.m3 { background: linear-gradient(180deg,#D8A06A,#B4713F); color: #3a1f0c; }
   .frow.me { background: rgba(46,158,144,0.08); border-radius: 10px; padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
   .frow.me .name { color: var(--c0); }
 
@@ -838,16 +810,6 @@
 
 <!-- backdrop voor popups -->
 <div class="backdrop" id="backdrop"></div>
-
-<!-- game-over-sheet (Porselein) -->
-<div class="win sheet" id="gameover" role="dialog" aria-labelledby="goTitle">
-  <h3 id="goTitle">Broken!</h3>
-  <p>Porcelain only takes two taps per tile. The third one was one too many.</p>
-  <div class="actions">
-    <button class="btn ghost" id="goBack">Back</button>
-    <button class="btn" id="goRetry">Retry</button>
-  </div>
-</div>
 
 <!-- vriend-toevoegen-sheet -->
 <div class="win sheet" id="connect" role="dialog" aria-labelledby="connectTitle">
@@ -1082,7 +1044,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.4.8";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.5.0";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1340,11 +1302,13 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     if (r.played){
       sub = r.moves + " moves · " + r.h + (r.h === 1 ? " hint" : " hints");
       result = '<span class="result"><span class="rtime">' + r.t + '</span>' +
-        '<span class="rpar' + (r.onpar ? " good" : "") + '">' + (r.onpar ? "on par" : "+" + r.over) + '</span></span>';
+        '<span class="rpar' + (r.onpar ? " good" : "") + '">' + (r.onpar ? "on par ✓" : "+" + r.over) + '</span></span>';
     } else {
       sub = "not played yet";
       result = '<span class="result pending"><span class="rtime">--:--</span></span>';
     }
+    /* top-3 krijgen een medaille (goud/zilver/brons) i.p.v. een kaal rangnummer */
+    const medal = (r.played && typeof rankLabel === "number" && rankLabel <= 3) ? " medal m" + rankLabel : "";
     /* ontkoppelen enkel op vriendenrijen (niet op jezelf): break-link → bevestigen */
     const menu = r.isFriend
       ? '<button class="unlinkbtn" data-id="' + esc(r.id) + '" aria-label="Unfriend" title="Unfriend">' + UNLINK_SVG + '</button>' +
@@ -1352,7 +1316,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
         '<button class="confirm-x" aria-label="Cancel">×</button>'
       : '';
     return '<div class="frow' + (r.me ? " me" : "") + '">' +
-      '<span class="rank">' + (rankLabel == null ? "" : rankLabel) + '</span>' +
+      '<span class="rank' + medal + '">' + (rankLabel == null ? "" : rankLabel) + '</span>' +
       '<span class="avatar" style="background:' + av + '"><span>' + esc(nm[0].toUpperCase()) + '</span></span>' +
       '<span class="name">' + esc(nm) + '<small>' + esc(sub) + '</small></span>' +
       result + menu +
@@ -1488,10 +1452,8 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   let state = [], start = [];
   let moves = 0, par = 0, locked = false, hintsUsed = 0, hintTile = -1;
   let tiles = [];
-  let cracks = [];           /* porselein: tikken per tegel */
   let dailyTaps = [];        /* zettenlog van de huidige daily-poging (voor serververificatie) */
   let nLink = [];            /* Numbers: verborgen bedrading per tegel */
-  const fragileActive = () => ctx && ctx.type === "free" && ctx.fragile;
   const isNumbers = () => !!(ctx && ctx.numbers);
 
   /* timer met hervat-ondersteuning: baseElapsed = reeds verstreken tijd */
@@ -1525,7 +1487,6 @@ if (typeof module !== "undefined") module.exports = FluxCore;
         const w = document.createElement("span"); w.className = "wire"; t.appendChild(w);
       } else {
         const g = document.createElement("span"); g.className = "g"; t.appendChild(g);
-        const cr = document.createElement("span"); cr.className = "cr"; t.appendChild(cr);
       }
       t.addEventListener("click", ()=>tap(i));
       board.appendChild(t); tiles.push(t);
@@ -1535,14 +1496,11 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   function paint(i, animate, isSource){
     const t = tiles[i];
-    t.style.visibility = "";   /* herstel na een eerdere breuk */
     if (isNumbers()){
       t.className = "tile ntile " + (state[i] ? "on" : "off");
       const w = t.querySelector(".wire"); if (w) w.innerHTML = nLink[i].map(j => "<span>" + (j+1) + "</span>").join("");
     } else {
-      let cls = "tile s"+state[i];
-      if (fragileActive() && cracks[i] > 0) cls += " c" + Math.min(cracks[i], 2);
-      t.className = cls;
+      t.className = "tile s" + state[i];
       t.querySelector(".g").textContent = glyphs[state[i]];
     }
     if (animate){
@@ -1588,11 +1546,6 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       if (state.every(v => v === 1)) showWin();
       return;
     }
-    /* porselein: derde tik op dezelfde tegel breekt hem: game over */
-    if (fragileActive()){
-      cracks[i]++;
-      if (cracks[i] >= 3){ breakTile(i); return; }
-    }
     if (ctx && ctx.type === "daily") dailyTaps.push(i);
     const aff = FluxCore.applyTap(state, i, cfg.size, cfg.states);
     clearHint();
@@ -1603,32 +1556,8 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     else saveProg();
   }
 
-  function breakTile(i){
-    locked = true; stopTimer(); clearHint();
-    const t = tiles[i];
-    /* random breekgedrag: schokrichting, valrichting en rotatie verschillen per keer */
-    const sgn = Math.random() < 0.5 ? -1 : 1;
-    t.style.setProperty("--sx", (sgn * (1.5 + Math.random() * 2)).toFixed(1) + "px");
-    t.style.setProperty("--pr", (sgn * (2 + Math.random() * 3)).toFixed(1) + "deg");
-    t.style.setProperty("--bx", ((Math.random() * 36 - 18)).toFixed(0) + "px");
-    t.style.setProperty("--br", (-sgn * (8 + Math.random() * 14)).toFixed(0) + "deg");
-    t.classList.add("c2");
-    void t.offsetWidth;
-    t.classList.add("broken");
-    if (navigator.vibrate) navigator.vibrate([30,40,60]);
-    /* korte schok door het hele bord */
-    const wrap = board.parentElement;
-    wrap.classList.add("boardshake");
-    setTimeout(()=>wrap.classList.remove("boardshake"), 360);
-    setTimeout(()=>{
-      $("gameover").classList.add("show");
-      $("backdrop").classList.add("show");
-    }, 780);
-  }
-
   function loadPuzzle(p){
     state = p.state.slice(); start = state.slice(); par = p.par;
-    cracks = new Array(cfg.size*cfg.size).fill(0);
     dailyTaps = [];
     hintsUsed = 0; clearHint();
     moves = 0; movesEl.textContent = "00"; parEl.textContent = pad(par);
@@ -1661,7 +1590,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function startGame(c){
     ctx = c;
     if (c.type === "daily"){
-      c.fragile = false; c.numbers = false;         /* daily is altijd classic, ook qua achtergrond */
+      c.numbers = false;                             /* daily is altijd classic */
       applyGameChrome(false);
       const p = dailyPuzzle(c.key);
       cfg = p.cfg;
@@ -1683,7 +1612,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       startTimer();                                  /* sprint: klok loopt meteen */
     } else {
       const numbers = (mode === "numbers");
-      c.numbers = numbers; c.fragile = false;
+      c.numbers = numbers;
       cfg = numbers ? NUMBERS_DIFFS[c.key] : FREE_DIFFS[c.key];
       applyGameChrome(numbers);
       setAccent(cfg);
@@ -1722,7 +1651,6 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function reset(){
     if (moves > 0) bumpAttempts();   /* geen extra poging tellen als er nog niets gespeeld is */
     state = start.slice();
-    cracks = new Array(state.length).fill(0);
     dailyTaps = [];
     clearHint();
     moves = 0; movesEl.textContent = "00";
@@ -1733,7 +1661,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       hintsUsed = 0;
       resetTimer();
     }
-    renderAll(); hideWin(); hideGameover();
+    renderAll(); hideWin();
     if (!(ctx && ctx.type === "daily")) startTimer();   /* vrij spel: klok loopt meteen weer */
   }
 
@@ -1810,26 +1738,18 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function hideWin(){
     win.classList.remove("show"); locked = false;
     /* backdrop enkel weghalen als er geen sheet meer open staat */
-    if (!["help","connect","gameover"].some(i => $(i).classList.contains("show")))
-      $("backdrop").classList.remove("show");
-  }
-  function hideGameover(){
-    $("gameover").classList.remove("show");
-    if (!win.classList.contains("show") &&
-        !["help","connect"].some(i => $(i).classList.contains("show")))
+    if (!["help","connect"].some(i => $(i).classList.contains("show")))
       $("backdrop").classList.remove("show");
   }
 
   /* ================= wiring ================= */
   function leaveGame(){
-    saveProg(); stopTimer(); hideWin(); hideGameover();
+    saveProg(); stopTimer(); hideWin();
     show(ctx && ctx.type === "daily" ? "vandaag" : "spelen");
     refreshVandaag();
   }
   $("backBtn").addEventListener("click", leaveGame);
   $("winBack").addEventListener("click", leaveGame);
-  $("goRetry").addEventListener("click", reset);
-  $("goBack").addEventListener("click", leaveGame);
   $("winNext").addEventListener("click", ()=>{ if (ctx.type === "free") newFreePuzzle(); });
   $("winShareBtn").addEventListener("click", async ()=>{
     if (!shareText) return;
@@ -1866,7 +1786,6 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   }
   $("backdrop").addEventListener("click", ()=>{
     if (win.classList.contains("show")) leaveGame();       /* daily-resultaat: ernaast klikken = klaar */
-    else if ($("gameover").classList.contains("show")) reset();  /* game over: ernaast klikken = opnieuw */
     else closeSheets();
   });
   $("addFriendFab").addEventListener("click", ()=>openSheet("connect"));
