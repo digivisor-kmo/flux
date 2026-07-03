@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -590,11 +591,13 @@
       <div class="h1">Vrienden</div>
       <div class="sub">Speel tegen wie je kent</div>
 
-      <div class="card" style="margin-top:20px">
+      <div id="authBox" style="margin-top:20px"></div>
+
+      <div class="card" style="margin-top:14px">
         <span class="k">Ranglijst · Daily Sprint</span>
         <div id="ranking" style="margin-top:6px"></div>
       </div>
-      <div class="notice">Prototype: vrienden en scores zijn nog lokaal / fictief</div>
+      <div class="notice" id="rankNotice">Ranglijst op tijd · pogingen en hints tellen mee</div>
     </div>
   </section>
 
@@ -887,8 +890,10 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v0.9.2";                     /* omhoog bij elke feature-push */
+  const BUILD = "v0.10.0";                    /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
+  const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
   const TARGET = 0;
   const glyphs = ["▲","●","■"];
 
@@ -1061,20 +1066,14 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     freeCards.appendChild(c);
   });
 
-  /* ================= vrienden (mock) ================= */
-  function makeCode(){
-    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-    let c = "";
-    for (let i=0;i<4;i++) c += chars[Math.floor(Math.random()*chars.length)];
-    return "FLX-" + c;
-  }
-  let myCode = store.get("flux-code", null);
-  if (!myCode){ myCode = makeCode(); store.set("flux-code", myCode); }
-  $("myCode").textContent = myCode;
+  /* ================= vrienden (echt, via Supabase) ================= */
+  let myCode = null;   /* komt uit het profiel na login */
+  const AV_COLS = ["var(--c0)","var(--c1)","var(--c2)"];
 
   /* fake maar deterministische QR-look op basis van de code */
-  (function drawQr(){
-    const n = 21, rng = FluxCore.seededRng(FluxCore.hashStr(myCode));
+  function drawQr(code){
+    if (!code){ $("qrBox").innerHTML = ""; return; }
+    const n = 21, rng = FluxCore.seededRng(FluxCore.hashStr(code));
     let cells = "";
     for (let y=0;y<n;y++) for (let x=0;x<n;x++){
       const finder = (x<7&&y<7)||(x>=n-7&&y<7)||(x<7&&y>=n-7);
@@ -1086,59 +1085,67 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       if (on) cells += '<rect x="'+x+'" y="'+y+'" width="1" height="1"/>';
     }
     $("qrBox").innerHTML = '<svg viewBox="0 0 '+n+' '+n+'" fill="#2A2118">'+cells+'</svg>';
-  })();
-
-  const MOCK_FRIENDS = [
-    { name: "Lien",  code: "FLX-L4NX", t: "01:12", att: 1, h: 0 },
-    { name: "Jonas", code: "FLX-J0NC", t: "02:38", att: 3, h: 2 },
-    { name: "Mira",  code: "FLX-M1RA", t: "01:55", att: 2, h: 0 }
-  ];
-  const AV_COLS = ["var(--c0)","var(--c1)","var(--c2)"];
-
-  /* rijen van vandaag (mock-vrienden + toegevoegde codes + eigen resultaat), gerankt op tijd */
-  function dailyRows(){
-    const extra = store.get("flux-friends", []);
-    const rows = MOCK_FRIENDS.concat(extra.map((c,i) => ({ name: c.replace("FLX-",""), code: c, t: "0"+(2+i)+":4"+(i%10), att: 1+(i%3), h: i%2 })));
-    const res = dailyResult("sprint");
-    if (res) rows.push({ name: "Jij", code: myCode, t: res.time, att: res.attempts, h: res.hints, me: true });
-    rows.sort((a,b) => a.t.localeCompare(b.t));
-    return rows;
   }
+
   function frowHTML(r, i){
     return '<div class="frow' + (r.me ? " me" : "") + '">' +
       '<span class="rank">' + (i+1) + '</span>' +
-      '<span class="avatar" style="background:' + AV_COLS[FluxCore.hashStr(r.code)%3] + '"><span>' + r.name[0].toUpperCase() + '</span></span>' +
+      '<span class="avatar" style="background:' + AV_COLS[FluxCore.hashStr(r.code || r.name)%3] + '"><span>' + r.name[0].toUpperCase() + '</span></span>' +
       '<span class="name">' + r.name + '</span>' +
       '<span class="score' + (i===0 ? " good" : "") + '">' + r.t +
       '<small>' + r.att + (r.att === 1 ? ' poging' : ' pogingen') + ' · ' + r.h + (r.h === 1 ? ' hint' : ' hints') + '</small></span>' +
       '</div>';
   }
-  function refreshRanking(){
-    const rows = dailyRows();
+
+  /* ranglijst: echt bij login, anders een uitnodiging om in te loggen */
+  async function refreshRanking(){
     const el = $("ranking");
+    if (!(sb && session)){
+      el.innerHTML = '<div class="frow me"><span class="rank">–</span>' +
+        '<span class="avatar" style="background:var(--muted)"><span>?</span></span>' +
+        '<span class="name">Log in met Google<small>om vrienden toe te voegen en mee te doen</small></span><span class="score"></span></div>';
+      return;
+    }
+    const { data, error } = await sb.from("daily_results")
+      .select("time_ms, moves, hints, attempts, user_id, profiles(name, code)")
+      .eq("day", todayKey);
+    if (error){ el.innerHTML = '<div class="notice">ranglijst laden mislukt</div>'; return; }
+    const rows = (data || []).map(r => ({
+      name: r.user_id === session.user.id ? "Jij" : (r.profiles && r.profiles.name) || "Speler",
+      code: (r.profiles && r.profiles.code) || "",
+      t: fmtTime(r.time_ms), att: r.attempts, h: r.hints,
+      me: r.user_id === session.user.id
+    }));
+    rows.sort((a,b) => a.t.localeCompare(b.t));
     el.innerHTML = rows.map(frowHTML).join("");
-    if (!dailyResult("sprint")){
+    if (!rows.some(r => r.me)){
       el.innerHTML += '<div class="frow me"><span class="rank">–</span>' +
         '<span class="avatar" style="background:var(--muted)"><span>J</span></span>' +
         '<span class="name">Jij<small>speel de daily om mee te doen</small></span><span class="score"></span></div>';
+    }
+    if (rows.length === 0){
+      el.innerHTML += '<div class="notice" style="margin-top:10px">nog niemand vandaag · voeg vrienden toe met hun code</div>';
     }
   }
 
   /* uitnodigen via WhatsApp: installatielink + jouw vriendencode */
   $("waShare").addEventListener("click", ()=>{
+    if (!session){ login(); return; }
     const msg = "Hey! Ik speel " + GAME_NAME + ", een puzzelgame met een dagelijkse puzzel. " +
       "Speel je mee? Installeer de app via " + APP_URL +
       " en voeg me toe met mijn code " + myCode + ".";
     window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
   });
 
-  $("addForm").addEventListener("submit", e => {
+  $("addForm").addEventListener("submit", async e => {
     e.preventDefault();
-    const v = $("codeInput").value.trim().toUpperCase();
-    if (!/^FLX-[A-Z2-9]{4}$/.test(v) || v === myCode) { $("codeInput").value = ""; $("codeInput").placeholder = "ONGELDIGE CODE"; return; }
-    const list = store.get("flux-friends", []);
-    if (!list.includes(v)) { list.push(v); store.set("flux-friends", list); }
-    $("codeInput").value = "";
+    const input = $("codeInput");
+    if (!session){ input.value = ""; input.placeholder = "LOG EERST IN"; return; }
+    const v = input.value.trim().toUpperCase();
+    if (!/^FLX-[A-Z2-9]{4}$/.test(v) || v === myCode){ input.value = ""; input.placeholder = "ONGELDIGE CODE"; return; }
+    const { error } = await sb.rpc("add_friend", { friend_code: v });
+    if (error){ input.value = ""; input.placeholder = "CODE NIET GEVONDEN"; return; }
+    input.value = ""; input.placeholder = "FLX-····";
     refreshRanking();
     closeSheets();
   });
@@ -1152,6 +1159,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   let moves = 0, par = 0, locked = false, hintsUsed = 0, hintTile = -1;
   let tiles = [];
   let cracks = [];           /* porselein: tikken per tegel */
+  let dailyTaps = [];        /* zettenlog van de huidige daily-poging (voor serververificatie) */
   const fragileActive = () => ctx && ctx.type === "free" && ctx.fragile;
 
   /* timer met hervat-ondersteuning: baseElapsed = reeds verstreken tijd */
@@ -1233,6 +1241,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       cracks[i]++;
       if (cracks[i] >= 3){ breakTile(i); return; }
     }
+    if (ctx && ctx.type === "daily") dailyTaps.push(i);
     const aff = FluxCore.applyTap(state, i, cfg.size, cfg.states);
     clearHint();
     aff.forEach(j => paint(j, true, j===i));
@@ -1268,6 +1277,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function loadPuzzle(p){
     state = p.state.slice(); start = state.slice(); par = p.par;
     cracks = new Array(cfg.size*cfg.size).fill(0);
+    dailyTaps = [];
     hintsUsed = 0; clearHint();
     moves = 0; movesEl.textContent = "00"; parEl.textContent = pad(par);
     resetTimer(); renderAll(); hideWin(); entrance();
@@ -1290,9 +1300,10 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function saveProg(){
     if (!(ctx && ctx.type === "daily") || dailyResult(ctx.key)) return;
     store.set(progKey(), {
-      state: state.slice(),
+      state: state.slice(), taps: dailyTaps.slice(),
       moves, hints: hintsUsed, elapsed: currentElapsed()
     });
+    pushProgress();
   }
 
   function startGame(c){
@@ -1309,6 +1320,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       show("game"); buildBoard(cfg.size); loadPuzzle(p);
       if (c.resume){
         state = c.resume.state.slice();
+        dailyTaps = (c.resume.taps || []).slice();
         moves = c.resume.moves; hintsUsed = c.resume.hints;
         baseElapsed = c.resume.elapsed || 0;
         movesEl.textContent = pad(moves);
@@ -1335,6 +1347,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     bumpAttempts();
     state = start.slice();
     cracks = new Array(state.length).fill(0);
+    dailyTaps = [];
     clearHint();
     moves = 0; movesEl.textContent = "00";
     if (ctx && ctx.type === "daily"){
@@ -1366,6 +1379,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       store.set("flux-daily-" + todayKey + "-" + ctx.key, { moves, par, time: tStr, hints: hintsUsed, attempts });
       store.del(progKey());
       bumpStreak();
+      submitDaily(attempts);   /* serverside verificatie + echte ranglijst */
       refreshVandaag(); refreshRanking();
 
       $("winTitle").textContent = "Proficiat!";
@@ -1468,7 +1482,129 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   window.addEventListener("pagehide", saveProg);
   document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState === "hidden") saveProg(); });
 
+  /* ================= backend: Supabase (auth, profiel, sync) ================= */
+  let sb = null, session = null, myProfile = null;
+  try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){ sb = null; }
+
+  function login(){
+    if (!sb) return;
+    sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: APP_URL } });
+  }
+  async function logout(){ if (sb) await sb.auth.signOut(); }
+
+  function renderAuth(){
+    const box = $("authBox");
+    if (!sb){ box.innerHTML = ""; return; }
+    if (session && myProfile){
+      box.innerHTML =
+        '<div class="card"><div class="row">' +
+        '<div><span class="k">Ingelogd</span><h3>' + myProfile.name + '</h3>' +
+        '<div class="desc" style="margin-top:2px">Jouw code: <strong>' + myProfile.code + '</strong></div></div>' +
+        '<button class="textbtn" id="logoutBtn">Uitloggen</button></div></div>';
+      $("logoutBtn").addEventListener("click", logout);
+    } else {
+      box.innerHTML =
+        '<div class="card"><span class="k">Account</span>' +
+        '<h3>Speel met vrienden</h3>' +
+        '<div class="desc">Log in om je vriendencode te krijgen, vrienden toe te voegen en mee te doen aan de daily-ranglijst. Je voortgang en streak volgen dan je account.</div>' +
+        '<button class="btn" id="loginBtn" style="width:100%;margin-top:16px">Inloggen met Google</button></div>';
+      $("loginBtn").addEventListener("click", login);
+    }
+    /* connect-popup meebijwerken */
+    $("myCode").textContent = myCode || "—";
+    drawQr(myCode);
+  }
+
+  async function loadProfile(){
+    if (!(sb && session)) return;
+    for (let attempt = 0; attempt < 3; attempt++){
+      const { data } = await sb.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
+      if (data){ myProfile = data; myCode = data.code; return; }
+      await new Promise(r => setTimeout(r, 900));   /* trigger kan net na signup nog bezig zijn */
+    }
+  }
+
+  /* server → lokaal: resultaat, voortgang en streak van vandaag */
+  async function syncFromServer(){
+    if (!(sb && session)) return;
+    const uid = session.user.id;
+    const { data: res } = await sb.from("daily_results").select("*")
+      .eq("user_id", uid).eq("day", todayKey).maybeSingle();
+    if (res){
+      store.set("flux-daily-" + todayKey + "-sprint",
+        { moves: res.moves, par: res.par, time: fmtTime(res.time_ms), hints: res.hints, attempts: res.attempts });
+      store.del(progKey());
+    } else {
+      const { data: prog } = await sb.from("daily_progress").select("*")
+        .eq("user_id", uid).eq("day", todayKey).maybeSingle();
+      if (prog && !dailyResult("sprint")){
+        const local = store.get(progKey(), null);
+        if (!local || (prog.elapsed_ms || 0) >= (local.elapsed || 0)){
+          store.set(progKey(), { state: prog.state, taps: prog.taps || [], moves: prog.moves,
+            hints: prog.hints, elapsed: prog.elapsed_ms });
+          store.set(attKey(), prog.attempts || 1);
+        }
+      }
+    }
+    /* streak uit resultaten (90 dagen terug) */
+    const { data: days } = await sb.from("daily_results").select("day")
+      .eq("user_id", uid).order("day", { ascending: false }).limit(90);
+    if (days){
+      let streak = 0;
+      const d = new Date();
+      const have = new Set(days.map(r => r.day));
+      if (!have.has(todayKey)) d.setDate(d.getDate() - 1);   /* vandaag telt pas na oplossen */
+      while (have.has(d.toISOString().slice(0,10))){ streak++; d.setDate(d.getDate() - 1); }
+      store.set("flux-streak", streak);
+    }
+    refreshVandaag();
+  }
+
+  /* lokaal → server: voortgang (licht gedebounced) */
+  let progPushTimer = null;
+  function pushProgress(){
+    if (!(sb && session && ctx && ctx.type === "daily") || dailyResult("sprint")) return;
+    if (progPushTimer) clearTimeout(progPushTimer);
+    progPushTimer = setTimeout(async ()=>{
+      const p = store.get(progKey(), null);
+      if (!p) return;
+      await sb.from("daily_progress").upsert({
+        user_id: session.user.id, day: todayKey,
+        state: p.state, taps: p.taps || [], moves: p.moves, hints: p.hints,
+        attempts: store.get(attKey(), 1), elapsed_ms: p.elapsed,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id,day" }).then(()=>{}).catch(()=>{});
+    }, 1200);
+  }
+
+  /* oplossing serverside laten verifiëren; de client wordt nooit vertrouwd */
+  async function submitDaily(attempts){
+    if (!(sb && session)) return;
+    try {
+      const { data, error } = await sb.functions.invoke("submit-daily", {
+        body: { day: todayKey, taps: dailyTaps, elapsedMs: elapsed, hints: hintsUsed, attempts }
+      });
+      if (!error && data && data.ok){
+        await syncFromServer();
+        refreshRanking();
+      }
+    } catch(e){ /* offline: lokaal resultaat blijft staan */ }
+  }
+
+  if (sb){
+    sb.auth.onAuthStateChange(async (_ev, s) => {
+      session = s;
+      myProfile = null; myCode = null;
+      if (s) await loadProfile();
+      renderAuth();
+      refreshRanking();
+      if (s) await syncFromServer();
+      refreshVandaag();
+    });
+  }
+
   setMode(mode);
+  renderAuth();
   refreshVandaag();
   refreshRanking();
 
