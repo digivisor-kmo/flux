@@ -102,6 +102,12 @@
   .icon i:nth-child(3) { border-radius: 1px; }
   .icon.lamp { color: var(--ink); }
   .icon.lamp:active { color: var(--accent); }
+  /* vriend-toevoegen: gevuld teal accent zodat de + duidelijk oproept tot actie */
+  .icon.add {
+    background: #2E9E90; color: #fff; font-weight: 700;
+    border: 1px solid rgba(255,255,255,0.35);
+    box-shadow: 0 2px 6px rgba(46,158,144,0.4), inset 0 1px 0 rgba(255,255,255,0.35);
+  }
 
   /* topbar-groep rechts (naam + uitloggen + vriend toevoegen) */
   .tbgroup { display: flex; align-items: center; gap: 8px; }
@@ -600,7 +606,7 @@
         <button class="icon" id="logoutIcon" aria-label="Uitloggen" style="display:none">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><path d="M17 8l4 4-4 4"/><path d="M21 12H10"/></svg>
         </button>
-        <button class="icon" id="addFriendBtn" aria-label="Vriend toevoegen">+</button>
+        <button class="icon add" id="addFriendBtn" aria-label="Vriend toevoegen">+</button>
       </div>
     </div>
     <div class="content">
@@ -693,13 +699,12 @@
 <!-- vriend-toevoegen-sheet -->
 <div class="win sheet" id="connect" role="dialog" aria-labelledby="connectTitle">
   <h3 id="connectTitle">Vriend toevoegen</h3>
-  <p>Deel je code of scan die van een vriend.</p>
+  <p>Deel je code of voeg de code van een vriend toe.</p>
 
   <div class="csec">
     <span class="ck">Jouw code</span>
     <div class="codebox">
       <div class="mycode" id="myCode">…</div>
-      <div class="qr" id="qrBox"></div>
     </div>
     <button class="btn wa" id="waShare">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
@@ -906,7 +911,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v0.10.1";                    /* omhoog bij elke feature-push */
+  const BUILD = "v0.10.2";                    /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1086,23 +1091,6 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* ================= vrienden (echt, via Supabase) ================= */
   let myCode = null;   /* komt uit het profiel na login */
   const AV_COLS = ["var(--c0)","var(--c1)","var(--c2)"];
-
-  /* fake maar deterministische QR-look op basis van de code */
-  function drawQr(code){
-    if (!code){ $("qrBox").innerHTML = ""; return; }
-    const n = 21, rng = FluxCore.seededRng(FluxCore.hashStr(code));
-    let cells = "";
-    for (let y=0;y<n;y++) for (let x=0;x<n;x++){
-      const finder = (x<7&&y<7)||(x>=n-7&&y<7)||(x<7&&y>=n-7);
-      let on;
-      if (finder){
-        const lx = x<7?x:(x>=n-7?x-(n-7):x), ly = y<7?y:(y>=n-7?y-(n-7):y);
-        on = lx===0||lx===6||ly===0||ly===6||(lx>=2&&lx<=4&&ly>=2&&ly<=4);
-      } else on = rng() < 0.45;
-      if (on) cells += '<rect x="'+x+'" y="'+y+'" width="1" height="1"/>';
-    }
-    $("qrBox").innerHTML = '<svg viewBox="0 0 '+n+' '+n+'" fill="#2A2118">'+cells+'</svg>';
-  }
 
   function frowHTML(r, i){
     return '<div class="frow' + (r.me ? " me" : "") + '">' +
@@ -1530,7 +1518,6 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     }
     /* connect-popup meebijwerken */
     $("myCode").textContent = myCode || "—";
-    drawQr(myCode);
   }
   $("logoutIcon").addEventListener("click", logout);
 
