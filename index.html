@@ -230,6 +230,45 @@
   }
   .tabbar.hidden { display: none; }
 
+  /* zwevende +-knop: linksonder boven de tabbar, uitgelijnd op de linkerrand van de tabbar */
+  .fab {
+    position: fixed; z-index: 31;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    left: 50%; margin-left: calc(-1 * min(320px, 100vw - 44px) / 2);
+    width: 54px; height: 54px; border-radius: 50%;
+    background: #2E9E90; color: #fff; border: 1px solid rgba(255,255,255,0.35);
+    font-size: 30px; font-weight: 400; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 24px -6px rgba(46,158,144,0.55), 0 3px 8px rgba(var(--sh),0.22), inset 0 1px 0 rgba(255,255,255,0.4);
+    cursor: pointer; transition: transform 0.16s ease, box-shadow 0.16s ease;
+  }
+  .fab span { margin-top: -2px; }
+  .fab:active { transform: scale(0.93); }
+  /* extra bodemruimte zodat de laatste ranglijst-rijen niet onder de FAB verdwijnen */
+  #scr-vrienden { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+
+  /* ontkoppelen per rij: subtiele 3-puntjes → Ontkoppelen + annuleren */
+  .frow .rowmenu {
+    flex: none; width: 26px; height: 26px; margin-left: 2px; border: none;
+    background: none; color: var(--muted); font-size: 17px; line-height: 1;
+    border-radius: 8px; cursor: pointer;
+  }
+  .frow .rowmenu:active { background: rgba(42,33,24,0.06); }
+  .frow .unlink, .frow .cancelmenu { display: none; }
+  .frow.confirm .rowmenu, .frow.confirm .score { display: none; }
+  .frow.confirm .unlink {
+    display: inline-flex; align-items: center; flex: none; margin-left: 2px;
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: #C74B33;
+    background: rgba(199,75,51,0.09); border: 1px solid rgba(199,75,51,0.22);
+    border-radius: 9px; padding: 6px 10px; cursor: pointer;
+  }
+  .frow.confirm .cancelmenu {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 24px; height: 26px; border: none; background: none; color: var(--muted);
+    font-size: 17px; cursor: pointer;
+  }
+  .frow .score.pending { color: var(--muted); }
+
   /* ================= tiers: rustige papieren rijen met gekleurde vouwchip ================= */
   .tier {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -636,7 +675,6 @@
         <button class="icon" id="logoutIcon" aria-label="Uitloggen" style="display:none">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><path d="M17 8l4 4-4 4"/><path d="M21 12H10"/></svg>
         </button>
-        <button class="icon add" id="addFriendBtn" aria-label="Vriend toevoegen" style="display:none">+</button>
       </div>
     </div>
     <div class="content">
@@ -651,6 +689,9 @@
       </div>
       <div class="notice" id="rankNotice">Eerst wie het dichtst bij par speelt · dan de snelste tijd</div>
     </div>
+    <button class="fab" id="addFriendFab" aria-label="Vriend toevoegen" style="display:none">
+      <span>+</span>
+    </button>
   </section>
 
   <!-- ============ GAME ============ -->
@@ -755,11 +796,7 @@
       <input id="codeInput" placeholder="FLX-····" maxlength="9" autocomplete="off">
       <button class="btn small ghost" type="submit">Voeg toe</button>
     </form>
-  </div>
-
-  <div class="csec">
-    <span class="ck">Jouw vrienden</span>
-    <div id="friendList"></div>
+    <div class="notice" id="addStatus" style="margin-top:12px;display:none"></div>
   </div>
 </div>
 
@@ -953,7 +990,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.1.0";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.2.0";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1159,16 +1196,29 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   let myCode = null;   /* komt uit het profiel na login */
   const AV_COLS = ["var(--c0)","var(--c1)","var(--c2)"];
 
-  function frowHTML(r, i){
+  function frowHTML(r, rankLabel){
     /* par-relatief is de rangschikking; tijd staat als hoofdgetal, parstatus eronder */
-    const parLabel = r.onpar ? "op par" : "+" + r.over + " boven par";
     const nm = r.name || "Speler";
+    const av = AV_COLS[FluxCore.hashStr(r.code || nm) % 3];
+    let scoreHTML;
+    if (r.played){
+      const parLabel = r.onpar ? "op par" : "+" + r.over + " boven par";
+      scoreHTML = '<span class="score' + (r.onpar ? " good" : "") + '">' + r.t +
+        '<small>' + parLabel + ' · ' + r.h + (r.h === 1 ? ' hint' : ' hints') + '</small></span>';
+    } else {
+      scoreHTML = '<span class="score pending">—<small>nog niet gespeeld</small></span>';
+    }
+    /* subtiel ontkoppelen enkel op vriendenrijen (niet op jezelf) */
+    const menu = r.isFriend
+      ? '<button class="rowmenu" data-id="' + esc(r.id) + '" aria-label="Opties">⋯</button>' +
+        '<button class="unlink" data-id="' + esc(r.id) + '">Ontkoppelen</button>' +
+        '<button class="cancelmenu" aria-label="Annuleer">×</button>'
+      : '';
     return '<div class="frow' + (r.me ? " me" : "") + '">' +
-      '<span class="rank">' + (i+1) + '</span>' +
-      '<span class="avatar" style="background:' + AV_COLS[FluxCore.hashStr(r.code || nm)%3] + '"><span>' + esc(nm[0].toUpperCase()) + '</span></span>' +
+      '<span class="rank">' + (rankLabel == null ? "" : rankLabel) + '</span>' +
+      '<span class="avatar" style="background:' + av + '"><span>' + esc(nm[0].toUpperCase()) + '</span></span>' +
       '<span class="name">' + esc(nm) + '</span>' +
-      '<span class="score' + (r.onpar ? " good" : "") + '">' + r.t +
-      '<small>' + parLabel + ' · ' + r.h + (r.h === 1 ? ' hint' : ' hints') + '</small></span>' +
+      scoreHTML + menu +
       '</div>';
   }
 
@@ -1188,7 +1238,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
         code: (r.profiles && r.profiles.code) || "",
         over: over, onpar: over === 0,
         timeMs: r.time_ms, t: fmtTime(r.time_ms),
-        att: r.attempts, h: r.hints,
+        att: r.attempts, h: r.hints, played: true,
         me: r.user_id === session.user.id
       };
     });
@@ -1205,16 +1255,44 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       return;
     }
     if (!el.children.length) el.innerHTML = '<div class="notice">laden…</div>';
-    const rows = await fetchDailyRows();
-    if (rows === null){ el.innerHTML = '<div class="notice">ranglijst laden mislukt · check je verbinding</div>'; return; }
-    el.innerHTML = rows.map(frowHTML).join("");
-    if (!rows.some(r => r.me)){
-      el.innerHTML += '<div class="frow me"><span class="rank">–</span>' +
-        '<span class="avatar" style="background:var(--muted)"><span>J</span></span>' +
-        '<span class="name">Jij<small>speel de daily om mee te doen</small></span><span class="score"></span></div>';
-    }
-    if (rows.length === 0){
-      el.innerHTML += '<div class="notice" style="margin-top:10px">nog niemand vandaag · voeg vrienden toe met hun code</div>';
+    const myId = session.user.id;
+    /* vrienden + resultaten van vandaag parallel ophalen */
+    const [fr, rr] = await Promise.all([
+      sb.from("friends").select("friend_id, profiles!friends_friend_id_fkey(name, code)").eq("user_id", myId),
+      sb.from("daily_results").select("time_ms, moves, par, hints, user_id").eq("day", todayKey)
+    ]);
+    if (fr.error || rr.error){ el.innerHTML = '<div class="notice">ranglijst laden mislukt · check je verbinding</div>'; return; }
+
+    const resById = {};
+    (rr.data || []).forEach(r => { resById[r.user_id] = r; });
+
+    /* deelnemers = jij + al je vrienden (ook wie nog niet speelde) */
+    const participants = [{ id: myId, name: "Jij", code: myCode || "", me: true, isFriend: false }];
+    (fr.data || []).filter(r => r.profiles).forEach(r => participants.push({
+      id: r.friend_id, name: r.profiles.name || "Speler", code: r.profiles.code || "",
+      me: false, isFriend: true
+    }));
+
+    participants.forEach(p => {
+      const res = resById[p.id];
+      if (res){
+        const over = Math.max(0, (res.moves || 0) - (res.par || 0));
+        p.played = true; p.over = over; p.onpar = over === 0;
+        p.timeMs = res.time_ms; p.t = fmtTime(res.time_ms); p.h = res.hints;
+      } else { p.played = false; }
+    });
+
+    const played = participants.filter(p => p.played)
+      .sort((a,b) => (a.over - b.over) || (a.timeMs - b.timeMs));
+    const notPlayed = participants.filter(p => !p.played)
+      .sort((a,b) => a.name.localeCompare(b.name));
+
+    let html = played.map((p,i) => frowHTML(p, i+1)).join("");
+    html += notPlayed.map(p => frowHTML(p, "–")).join("");
+    el.innerHTML = html;
+
+    if (participants.length === 1 && !participants[0].played){
+      el.innerHTML += '<div class="notice" style="margin-top:12px">Voeg vrienden toe met de +-knop en speel de daily om mee te doen</div>';
     }
   }
 
@@ -1227,51 +1305,44 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
   });
 
+  function addStatus(msg, ok){
+    const s = $("addStatus");
+    if (!s) return;
+    s.textContent = msg; s.style.display = "";
+    s.style.color = ok ? "#227A6F" : "#C74B33";
+  }
   $("addForm").addEventListener("submit", async e => {
     e.preventDefault();
     const input = $("codeInput");
-    if (!session){ input.value = ""; input.placeholder = "LOG EERST IN"; return; }
+    if (!session){ addStatus("Log eerst in om vrienden toe te voegen.", false); return; }
     const v = input.value.trim().toUpperCase();
-    if (!/^FLX-[A-Z2-9]{4}$/.test(v) || v === myCode){ input.value = ""; input.placeholder = "ONGELDIGE CODE"; return; }
+    if (!/^FLX-[A-Z2-9]{4}$/.test(v) || v === myCode){ addStatus("Dat is geen geldige vriendencode.", false); return; }
     const { error } = await sb.rpc("add_friend", { friend_code: v });
-    if (error){ input.value = ""; input.placeholder = "CODE NIET GEVONDEN"; return; }
-    input.value = ""; input.placeholder = "FLX-····";
+    if (error){ addStatus("Die code hebben we niet gevonden.", false); return; }
+    input.value = ""; $("addStatus").style.display = "none";
     refreshRanking();
-    loadFriendList();   /* sheet blijft open zodat de nieuwe vriend meteen in de lijst verschijnt */
+    closeSheets();      /* popup sluit → je landt meteen op het leaderboard */
   });
 
-  /* ================= vriendenlijst + verwijderen ================= */
-  async function loadFriendList(){
-    const box = $("friendList");
-    if (!box) return;
-    if (!(sb && session)){ box.innerHTML = '<div class="flempty">Log in om vrienden te beheren.</div>'; return; }
-    box.innerHTML = '<div class="flempty">laden…</div>';
-    const { data, error } = await sb.from("friends")
-      .select("friend_id, profiles!friends_friend_id_fkey(name, code)")
-      .eq("user_id", session.user.id);
-    if (error){ box.innerHTML = '<div class="flempty">vrienden laden mislukt</div>'; return; }
-    const list = (data || []).filter(r => r.profiles);
-    if (list.length === 0){ box.innerHTML = '<div class="flempty">Nog geen vrienden. Voeg iemand toe met hun code.</div>'; return; }
-    list.sort((a,b) => (a.profiles.name || "").localeCompare(b.profiles.name || ""));
-    box.innerHTML = list.map(r => {
-      const name = r.profiles.name || "Speler", code = r.profiles.code || "";
-      const av = AV_COLS[FluxCore.hashStr(code || name) % 3];
-      return '<div class="flrow">' +
-        '<span class="avatar" style="background:' + av + '"><span>' + esc(name[0].toUpperCase()) + '</span></span>' +
-        '<span class="name">' + esc(name) + '<small>' + esc(code) + '</small></span>' +
-        '<button class="rm" data-id="' + esc(r.friend_id) + '">Verwijder</button>' +
-        '</div>';
-    }).join("");
-  }
-
-  $("friendList").addEventListener("click", async e => {
-    const btn = e.target.closest(".rm");
-    if (!btn || !(sb && session)) return;
-    btn.disabled = true; btn.textContent = "…";
-    const { error } = await sb.rpc("remove_friend", { other: btn.dataset.id });
-    if (error){ btn.disabled = false; btn.textContent = "Verwijder"; return; }
-    loadFriendList();
-    refreshRanking();
+  /* ================= ontkoppelen vanuit het leaderboard ================= */
+  $("ranking").addEventListener("click", async e => {
+    const menuBtn = e.target.closest(".rowmenu");
+    if (menuBtn){
+      const row = menuBtn.closest(".frow");
+      const wasOpen = row.classList.contains("confirm");
+      $("ranking").querySelectorAll(".frow.confirm").forEach(r => r.classList.remove("confirm"));
+      if (!wasOpen) row.classList.add("confirm");
+      return;
+    }
+    const cancel = e.target.closest(".cancelmenu");
+    if (cancel){ cancel.closest(".frow").classList.remove("confirm"); return; }
+    const unlink = e.target.closest(".unlink");
+    if (unlink && sb && session){
+      unlink.disabled = true; unlink.textContent = "…";
+      const { error } = await sb.rpc("remove_friend", { other: unlink.dataset.id });
+      if (error){ unlink.disabled = false; unlink.textContent = "Ontkoppelen"; return; }
+      refreshRanking();
+    }
   });
 
   /* ================= game-engine (één instantie) ================= */
@@ -1515,7 +1586,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
         .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
       friends.innerHTML = '<div class="fh">Vrienden vandaag</div>';
       fetchDailyRows().then(rows => {
-        if (rows) friends.innerHTML = '<div class="fh">Vrienden vandaag</div>' + rows.map(frowHTML).join("");
+        if (rows) friends.innerHTML = '<div class="fh">Vrienden vandaag</div>' + rows.map((r,i)=>frowHTML(r,i+1)).join("");
       });
       stats.style.display = "flex"; friends.style.display = "block"; share.style.display = "none";
 
@@ -1591,7 +1662,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     if (id === "help") startDemo();
     if (id === "connect"){
       if (session && !myCode) loadProfile().then(renderAuth);   /* code alsnog ophalen indien nodig */
-      loadFriendList();
+      $("codeInput").value = ""; $("addStatus").style.display = "none";
     }
   }
   function closeSheets(){
@@ -1604,7 +1675,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     else if ($("gameover").classList.contains("show")) reset();  /* game over: ernaast klikken = opnieuw */
     else closeSheets();
   });
-  $("addFriendBtn").addEventListener("click", ()=>openSheet("connect"));
+  $("addFriendFab").addEventListener("click", ()=>openSheet("connect"));
 
   /* help-sheet met demo-animatie: plus van amber → tik midden → alles teal */
   const demoBoard = $("demoBoard"), demoTap = $("demoTap");
@@ -1678,12 +1749,12 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       const fallback = (meta.name || meta.full_name || (session.user && session.user.email) || "").split(" ")[0].split("@")[0];
       $("userName").textContent = (myProfile && myProfile.name ? myProfile.name : fallback).split(" ")[0];
       $("logoutIcon").style.display = "";
-      $("addFriendBtn").style.display = "";
+      $("addFriendFab").style.display = "";
     } else {
       box.style.display = "";
       $("userName").textContent = "";
       $("logoutIcon").style.display = "none";
-      $("addFriendBtn").style.display = "none";
+      $("addFriendFab").style.display = "none";
       box.innerHTML =
         '<div class="card"><span class="k">Account</span>' +
         '<h3>Speel met vrienden</h3>' +
