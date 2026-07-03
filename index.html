@@ -230,44 +230,50 @@
   }
   .tabbar.hidden { display: none; }
 
-  /* zwevende +-knop: linksonder boven de tabbar, uitgelijnd op de linkerrand van de tabbar */
+  /* zwevende knop: rechtsonder boven de tabbar, uitgelijnd op de rechterrand van de tabbar */
   .fab {
     position: fixed; z-index: 31;
     bottom: calc(84px + env(safe-area-inset-bottom));
-    left: 50%; margin-left: calc(-1 * min(320px, 100vw - 44px) / 2);
-    width: 54px; height: 54px; border-radius: 50%;
-    background: #2E9E90; color: #fff; border: 1px solid rgba(255,255,255,0.35);
-    font-size: 30px; font-weight: 400; line-height: 1;
+    left: 50%; margin-left: calc(min(320px, 100vw - 44px) / 2 - 56px);
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #2E9E90; color: #fff; border: 1px solid rgba(255,255,255,0.4);
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 10px 24px -6px rgba(46,158,144,0.55), 0 3px 8px rgba(var(--sh),0.22), inset 0 1px 0 rgba(255,255,255,0.4);
-    cursor: pointer; transition: transform 0.16s ease, box-shadow 0.16s ease;
+    cursor: pointer; transition: transform 0.16s ease;
   }
-  .fab span { margin-top: -2px; }
+  .fab svg { width: 26px; height: 26px; display: block; }
   .fab:active { transform: scale(0.93); }
   /* extra bodemruimte zodat de laatste ranglijst-rijen niet onder de FAB verdwijnen */
   #scr-vrienden { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
 
-  /* ontkoppelen per rij: subtiele 3-puntjes → Ontkoppelen + annuleren */
-  .frow .rowmenu {
-    flex: none; width: 26px; height: 26px; margin-left: 2px; border: none;
-    background: none; color: var(--muted); font-size: 17px; line-height: 1;
-    border-radius: 8px; cursor: pointer;
+  /* ontkoppelen per rij: subtiel break-link icoon → bevestigen (Ontkoppelen + annuleren) */
+  .frow .unlinkbtn {
+    flex: none; width: 30px; height: 30px; margin-left: 4px; padding: 0; border: none;
+    background: none; color: var(--muted); opacity: 0.65; cursor: pointer; border-radius: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
   }
-  .frow .rowmenu:active { background: rgba(42,33,24,0.06); }
-  .frow .unlink, .frow .cancelmenu { display: none; }
-  .frow.confirm .rowmenu, .frow.confirm .score { display: none; }
-  .frow.confirm .unlink {
-    display: inline-flex; align-items: center; flex: none; margin-left: 2px;
+  .frow .unlinkbtn svg { width: 16px; height: 16px; }
+  .frow .unlinkbtn:hover, .frow .unlinkbtn:active { opacity: 1; color: #C74B33; background: rgba(199,75,51,0.08); }
+  .frow .confirm-do, .frow .confirm-x { display: none; }
+  .frow.confirm .unlinkbtn, .frow.confirm .result { display: none; }
+  .frow.confirm .confirm-do {
+    display: inline-flex; align-items: center; flex: none;
     font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: #C74B33;
     background: rgba(199,75,51,0.09); border: 1px solid rgba(199,75,51,0.22);
     border-radius: 9px; padding: 6px 10px; cursor: pointer;
   }
-  .frow.confirm .cancelmenu {
+  .frow.confirm .confirm-x {
     display: inline-flex; align-items: center; justify-content: center; flex: none;
-    width: 24px; height: 26px; border: none; background: none; color: var(--muted);
-    font-size: 17px; cursor: pointer;
+    width: 26px; height: 28px; margin-left: 2px; border: none; background: none;
+    color: var(--muted); font-size: 18px; cursor: pointer;
   }
-  .frow .score.pending { color: var(--muted); }
+  /* propere resultaat-weergave: tijd groot, parstatus klein eronder */
+  .frow .result { flex: none; text-align: right; font-family: var(--mono); line-height: 1.25; }
+  .frow .result .rtime { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .frow .result .rpar { display: block; font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-top: 1px; }
+  .frow .result .rpar.good { color: var(--c0); }
+  .frow .result.pending { font-size: 9.5px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; }
 
   /* ================= tiers: rustige papieren rijen met gekleurde vouwchip ================= */
   .tier {
@@ -568,13 +574,10 @@
   .flrow .rm:active { transform: scale(0.94); }
   .flrow .rm:disabled { opacity: 0.5; }
   .flempty { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; padding: 4px 0; line-height: 1.5; }
-  .frow .name { font-weight: 700; font-size: 14px; flex: 1; }
-  .frow .name small { display: block; font-family: var(--mono); font-size: 9.5px; color: var(--muted); font-weight: 400; margin-top: 2px; letter-spacing: 0.06em; }
-  .frow .score { font-family: var(--mono); font-size: 12px; font-weight: 700; text-align: right; }
-  .frow .score.good { color: var(--c0); }
-  .frow .score small { display: block; font-size: 9.5px; color: var(--muted); font-weight: 400; margin-top: 2px; }
-  .frow .rank { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 18px; flex: none; }
-  .frow.me { background: rgba(46,158,144,0.07); border-radius: 10px; padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+  .frow .name { font-weight: 700; font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .frow .rank { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 16px; flex: none; text-align: center; }
+  .frow.me { background: rgba(46,158,144,0.08); border-radius: 10px; padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+  .frow.me .name { color: var(--c0); }
 
   .notice { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: center; margin-top: 16px; letter-spacing: 0.06em; }
 
@@ -689,8 +692,12 @@
       </div>
       <div class="notice" id="rankNotice">Eerst wie het dichtst bij par speelt · dan de snelste tijd</div>
     </div>
-    <button class="fab" id="addFriendFab" aria-label="Vriend toevoegen" style="display:none">
-      <span>+</span>
+    <button class="fab" id="addFriendFab" aria-label="Vriend toevoegen" title="Vriend toevoegen" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="9" cy="8" r="3.6"/>
+        <path d="M3 20c.7-3.4 3.2-5.4 6-5.4s5.3 2 6 5.4"/>
+        <path d="M19 8v6"/><path d="M22 11h-6"/>
+      </svg>
     </button>
   </section>
 
@@ -990,7 +997,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.2.0";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.2.1";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1195,30 +1202,31 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* ================= vrienden (echt, via Supabase) ================= */
   let myCode = null;   /* komt uit het profiel na login */
   const AV_COLS = ["var(--c0)","var(--c1)","var(--c2)"];
+  /* break-link icoon (lucide "unlink") voor het ontkoppelen van een vriend */
+  const UNLINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18.84 12.25 1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="m5.17 11.75-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></svg>';
 
   function frowHTML(r, rankLabel){
-    /* par-relatief is de rangschikking; tijd staat als hoofdgetal, parstatus eronder */
+    /* par-relatief is de rangschikking; tijd groot, parstatus klein eronder */
     const nm = r.name || "Speler";
     const av = AV_COLS[FluxCore.hashStr(r.code || nm) % 3];
-    let scoreHTML;
+    let result;
     if (r.played){
-      const parLabel = r.onpar ? "op par" : "+" + r.over + " boven par";
-      scoreHTML = '<span class="score' + (r.onpar ? " good" : "") + '">' + r.t +
-        '<small>' + parLabel + ' · ' + r.h + (r.h === 1 ? ' hint' : ' hints') + '</small></span>';
+      result = '<span class="result"><span class="rtime">' + r.t + '</span>' +
+        '<span class="rpar' + (r.onpar ? " good" : "") + '">' + (r.onpar ? "op par" : "+" + r.over) + '</span></span>';
     } else {
-      scoreHTML = '<span class="score pending">—<small>nog niet gespeeld</small></span>';
+      result = '<span class="result pending">nog niet gespeeld</span>';
     }
-    /* subtiel ontkoppelen enkel op vriendenrijen (niet op jezelf) */
+    /* ontkoppelen enkel op vriendenrijen (niet op jezelf): break-link → bevestigen */
     const menu = r.isFriend
-      ? '<button class="rowmenu" data-id="' + esc(r.id) + '" aria-label="Opties">⋯</button>' +
-        '<button class="unlink" data-id="' + esc(r.id) + '">Ontkoppelen</button>' +
-        '<button class="cancelmenu" aria-label="Annuleer">×</button>'
+      ? '<button class="unlinkbtn" data-id="' + esc(r.id) + '" aria-label="Vriend ontkoppelen" title="Ontkoppelen">' + UNLINK_SVG + '</button>' +
+        '<button class="confirm-do" data-id="' + esc(r.id) + '">Ontkoppelen</button>' +
+        '<button class="confirm-x" aria-label="Annuleer">×</button>'
       : '';
     return '<div class="frow' + (r.me ? " me" : "") + '">' +
       '<span class="rank">' + (rankLabel == null ? "" : rankLabel) + '</span>' +
       '<span class="avatar" style="background:' + av + '"><span>' + esc(nm[0].toUpperCase()) + '</span></span>' +
       '<span class="name">' + esc(nm) + '</span>' +
-      scoreHTML + menu +
+      result + menu +
       '</div>';
   }
 
@@ -1249,9 +1257,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   async function refreshRanking(){
     const el = $("ranking");
     if (!(sb && session)){
-      el.innerHTML = '<div class="frow me"><span class="rank">–</span>' +
-        '<span class="avatar" style="background:var(--muted)"><span>?</span></span>' +
-        '<span class="name">Log in met Google<small>om vrienden toe te voegen en mee te doen</small></span><span class="score"></span></div>';
+      el.innerHTML = '<div class="notice" style="margin:6px 0">Log in om je vrienden en tijden te zien.</div>';
       return;
     }
     if (!el.children.length) el.innerHTML = '<div class="notice">laden…</div>';
@@ -1326,21 +1332,21 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= ontkoppelen vanuit het leaderboard ================= */
   $("ranking").addEventListener("click", async e => {
-    const menuBtn = e.target.closest(".rowmenu");
-    if (menuBtn){
-      const row = menuBtn.closest(".frow");
+    const linkBtn = e.target.closest(".unlinkbtn");
+    if (linkBtn){
+      const row = linkBtn.closest(".frow");
       const wasOpen = row.classList.contains("confirm");
       $("ranking").querySelectorAll(".frow.confirm").forEach(r => r.classList.remove("confirm"));
       if (!wasOpen) row.classList.add("confirm");
       return;
     }
-    const cancel = e.target.closest(".cancelmenu");
+    const cancel = e.target.closest(".confirm-x");
     if (cancel){ cancel.closest(".frow").classList.remove("confirm"); return; }
-    const unlink = e.target.closest(".unlink");
-    if (unlink && sb && session){
-      unlink.disabled = true; unlink.textContent = "…";
-      const { error } = await sb.rpc("remove_friend", { other: unlink.dataset.id });
-      if (error){ unlink.disabled = false; unlink.textContent = "Ontkoppelen"; return; }
+    const doUnlink = e.target.closest(".confirm-do");
+    if (doUnlink && sb && session){
+      doUnlink.disabled = true; doUnlink.textContent = "…";
+      const { error } = await sb.rpc("remove_friend", { other: doUnlink.dataset.id });
+      if (error){ doUnlink.disabled = false; doUnlink.textContent = "Ontkoppelen"; return; }
       refreshRanking();
     }
   });
