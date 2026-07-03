@@ -122,6 +122,16 @@
   .sheet .helpbody p { font-family: var(--font); font-size: 13.5px; color: var(--ink); line-height: 1.55; margin-bottom: 12px; }
   .sheet .helpbody { margin-bottom: 6px; }
   .sheet .helpbody strong { font-weight: 800; }
+  .sheet .slidekicker { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  /* help-navigatie: puntjes + Back/Next */
+  .sheet .helpnav { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .sheet .helpnav .btn { padding: 11px 20px; }
+  .sheet .dots { display: flex; gap: 6px; }
+  .sheet .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+  .sheet .dots i.on { background: var(--ink); }
+  /* numbers-demo op slide 2: genummerde groen/rode mini-tegels */
+  .demoboard.ndemo .dtile { display: flex; align-items: center; justify-content: center; }
+  .demoboard.ndemo .dtile span { position: relative; z-index: 1; font-family: var(--mono); font-weight: 700; color: #fff; font-size: 15px; text-shadow: 0 1px 2px rgba(20,30,25,0.4); }
 
   /* demo-animatie in de uitleg */
   .demo { position: relative; width: 156px; margin: 2px auto 16px; }
@@ -857,16 +867,29 @@
 <div class="win sheet" id="help" role="dialog" aria-labelledby="helpTitle">
   <button class="sheetclose" id="helpCloseX" aria-label="Close">×</button>
   <h3 id="helpTitle">How to play</h3>
-  <div class="helpbody">
-    <p><strong>Classic — one rule.</strong> Tap a tile: that tile and its neighbours (up, down, left, right) shift one color forward. Bring the whole board to a single color.</p>
+
+  <div class="helpbody" id="helpSlide1">
+    <div class="slidekicker">Classic · mode 1 of 2</div>
+    <p><strong>One rule.</strong> Tap a tile: that tile and its neighbours (up, down, left, right) shift one color forward. Bring the whole board to a single color.</p>
     <div class="demo">
       <div class="demoboard" id="demoBoard"></div>
       <div class="demotap" id="demoTap"></div>
     </div>
-    <p><strong>Numbers — hidden wiring.</strong> Each numbered tile secretly flips two other tiles between green and red — the tapped tile itself doesn't change. Tap around to learn which tiles are linked, then turn every tile green. Use the eye button to peek at the wiring.</p>
-    <p><strong>Symbols.</strong> Hard to tell the colors apart? While playing Classic, tap the symbols button in the top right and every color also gets its own shape (triangle, circle, square).</p>
+    <p><strong>Symbols.</strong> Hard to tell the colors apart? Tap the symbols button top right and every color also gets its own shape (triangle, circle, square).</p>
   </div>
-  <button class="btn ghost" id="helpClose" style="width:100%">Got it</button>
+
+  <div class="helpbody" id="helpSlide2" style="display:none">
+    <div class="slidekicker">Numbers · mode 2 of 2</div>
+    <p><strong>Hidden wiring.</strong> Each numbered tile secretly flips two other tiles between green and red — the tapped tile itself doesn't change. Tap around to learn which tiles are linked, then turn every tile green.</p>
+    <div class="demo"><div class="demoboard ndemo" id="helpNumDemo"></div></div>
+    <p><strong>The eye button</strong> top right lets you peek at each tile's hidden wiring.</p>
+  </div>
+
+  <div class="helpnav">
+    <button class="btn ghost" id="helpPrev">Close</button>
+    <div class="dots"><i class="on" id="hdot1"></i><i id="hdot2"></i></div>
+    <button class="btn" id="helpNext">Next</button>
+  </div>
 </div>
 
 <!-- win-kaart -->
@@ -1044,7 +1067,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   /* ================= config ================= */
   const GAME_NAME = "FLUX";
-  const BUILD = "v1.4.1";                     /* omhoog bij elke feature-push */
+  const BUILD = "v1.4.2";                     /* omhoog bij elke feature-push */
   const APP_URL = "https://flux-gules-omega.vercel.app";
   const SUPABASE_URL = "https://zmecrifkrhzyndtczlbd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_XaNy1uXMX4c7EQVrePQlqg_QQ6SV-O6";
@@ -1500,7 +1523,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     t.style.visibility = "";   /* herstel na een eerdere breuk */
     if (isNumbers()){
       t.className = "tile ntile " + (state[i] ? "on" : "off");
-      const w = t.querySelector(".wire"); if (w) w.textContent = "→ " + nLink[i].map(j => j+1).join(" · ");
+      const w = t.querySelector(".wire"); if (w) w.textContent = nLink[i].map(j => j+1).join(" · ");
     } else {
       let cls = "tile s"+state[i];
       if (fragileActive() && cracks[i] > 0) cls += " c" + Math.min(cracks[i], 2);
@@ -1815,7 +1838,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function openSheet(id){
     $(id).classList.add("show");
     $("backdrop").classList.add("show");
-    if (id === "help") startDemo();
+    if (id === "help") showHelpSlide(1);
     if (id === "connect"){
       if (session && !myCode) loadProfile().then(renderAuth);   /* code alsnog ophalen indien nodig */
       $("codeInput").value = ""; $("addStatus").style.display = "none";
@@ -1859,9 +1882,30 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   }
   function startDemo(){ stopDemo(); demoCycle(); demoTimer = setInterval(demoCycle, 3200); }
   function stopDemo(){ if (demoTimer) clearInterval(demoTimer); demoTimer = null; }
+
+  /* numbers-demo op slide 2: statisch mini-bord met cijfers, groen (aan) / rood (uit) */
+  (function(){
+    const pat = [1,0,1, 0,1,0, 1,0,1];   /* 1 = groen (s0), 0 = rood (s1) */
+    $("helpNumDemo").innerHTML = pat.map((v,i) =>
+      '<div class="dtile ' + (v ? "s0" : "s1") + '"><span>' + (i+1) + '</span></div>').join("");
+  })();
+
+  /* help in 2 slides: Classic, dan Numbers */
+  let helpSlide = 1;
+  function showHelpSlide(n){
+    helpSlide = n;
+    $("helpSlide1").style.display = n === 1 ? "" : "none";
+    $("helpSlide2").style.display = n === 2 ? "" : "none";
+    $("hdot1").classList.toggle("on", n === 1);
+    $("hdot2").classList.toggle("on", n === 2);
+    $("helpPrev").textContent = n === 1 ? "Close" : "Back";
+    $("helpNext").textContent = n === 1 ? "Next" : "Got it";
+    if (n === 1) startDemo(); else stopDemo();
+  }
   $("helpBtn").addEventListener("click", ()=>openSheet("help"));
-  $("helpClose").addEventListener("click", closeSheets);
   $("helpCloseX").addEventListener("click", closeSheets);
+  $("helpPrev").addEventListener("click", ()=>{ if (helpSlide === 1) closeSheets(); else showHelpSlide(1); });
+  $("helpNext").addEventListener("click", ()=>{ if (helpSlide === 1) showHelpSlide(2); else closeSheets(); });
 
   /* voortgang bewaren als de app sluit tijdens een daily */
   window.addEventListener("pagehide", saveProg);
