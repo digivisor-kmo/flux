@@ -305,26 +305,27 @@
   .screen::-webkit-scrollbar, #scr-vrienden .content::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
   .frow .unlinkbtn {
-    flex: none; width: 30px; height: 30px; margin-left: 4px; padding: 0; border: none;
+    flex: none; width: 28px; height: 28px; margin-left: 0; padding: 0; border: none;
     background: none; color: var(--muted); opacity: 0.55; cursor: pointer; border-radius: 9px;
     display: inline-flex; align-items: center; justify-content: center;
     transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
   }
   .frow .unlinkbtn svg { width: 16px; height: 16px; }
   .frow .unlinkbtn:hover, .frow .unlinkbtn:active { opacity: 1; color: #FF7A6B; background: rgba(255,122,107,0.1); }
-  /* unfriend-bevestiging: standaard verborgen, enkel na tik op het unlink-icoon */
+  /* unfriend-bevestiging: standaard verborgen, enkel na tik op het unlink-icoon; compact zodat alles binnen het kader blijft */
   .frow .confirm-do, .frow .confirm-x { display: none; }
-  .frow.confirm .unlinkbtn, .frow.confirm .result { display: none; }
+  .frow.confirm { gap: 8px; }
+  .frow.confirm .unlinkbtn, .frow.confirm .result, .frow.confirm .name small { display: none; }
   .frow.confirm .confirm-do {
     display: inline-flex; align-items: center; flex: none;
-    font-family: var(--mono); font-size: 10.5px; font-weight: 500; color: #FF7A6B;
-    background: rgba(255,122,107,0.1); border: 1px solid rgba(255,122,107,0.28);
-    border-radius: 9px; padding: 6px 10px; cursor: pointer;
+    font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.04em; color: #FF7A6B;
+    background: rgba(255,122,107,0.12); border: 1px solid rgba(255,122,107,0.32);
+    border-radius: 9px; padding: 6px 11px; cursor: pointer; white-space: nowrap;
   }
   .frow.confirm .confirm-x {
     display: inline-flex; align-items: center; justify-content: center; flex: none;
-    width: 26px; height: 28px; margin-left: 2px; border: none; background: none;
-    color: var(--muted); font-size: 18px; cursor: pointer;
+    width: 26px; height: 26px; margin-left: 0; border: 1px solid var(--line);
+    background: rgba(255,255,255,0.04); border-radius: 8px; color: var(--muted); font-size: 15px; cursor: pointer;
   }
 
   /* ================= tiers: glazen rijen met glimmende staat-chip ================= */
@@ -811,9 +812,10 @@
   }
   .frow .avatar::before { display: none; }
   .frow.me .avatar { background: linear-gradient(180deg,#8AB8FF,#5B7BFF) !important; color: #06122A; border-color: transparent; box-shadow: 0 0 12px rgba(90,123,255,.6); }
-  .frow .name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+  .frow .name { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
   .frow .name .nm { font: 400 15px/1.15 var(--font); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .frow .name small { font: 400 9.5px/1 var(--mono); color: var(--muted); letter-spacing: 0.05em; text-transform: none; }
+  .frow .name small { font: 400 9.5px/1 var(--mono); color: var(--muted); letter-spacing: 0.05em; text-transform: none; white-space: nowrap; }
+  .frow .name small.pend { letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); }
   .frow .result { flex: none; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
   .frow .result .rpar { font: 500 12px/1 var(--mono); color: var(--muted); letter-spacing: 0.04em; }
   .frow .result .rpar.good { color: var(--c0); text-shadow: 0 0 10px rgba(var(--c0-rgb),.4); }
@@ -1709,27 +1711,26 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     } else {
       rankCell = '<span class="rank">' + (rankLabel == null ? "" : rankLabel) + '</span>';
     }
-    let sub = "", result;
+    /* status altijd ONDER de naam (zoals "1 try · 1 hint"), zodat de naam volle breedte heeft */
+    let sub, result = "";
     if (r.played){
-      /* zichtbaar hoe iemand staat t.o.v. par (PAR of +N) + tijd; pogingen en hints eronder */
       const tries = r.att || 1, hints = r.h || 0;
-      sub = '<small>' + tries + (tries === 1 ? " try" : " tries") + " · " +
-        hints + (hints === 1 ? " hint" : " hints") + '</small>';
+      sub = tries + (tries === 1 ? " try" : " tries") + " · " + hints + (hints === 1 ? " hint" : " hints");
       result = '<span class="result"><span class="rpar' + (r.onpar ? " good" : "") + '">' +
         (r.onpar ? "PAR" : "+" + r.over) + '</span><span class="rtime">' + r.t + '</span></span>';
     } else {
-      result = '<span class="result pending">Not dived yet</span>';
+      sub = "Not dived yet";
     }
     /* ontkoppelen enkel op vriendenrijen (niet op jezelf): break-link → bevestigen */
     const menu = r.isFriend
       ? '<button class="unlinkbtn" data-id="' + esc(r.id) + '" aria-label="Unfriend" title="Unfriend">' + UNLINK_SVG + '</button>' +
-        '<button class="confirm-do" data-id="' + esc(r.id) + '">Unfriend</button>' +
+        '<button class="confirm-do" data-id="' + esc(r.id) + '">Remove</button>' +
         '<button class="confirm-x" aria-label="Cancel">×</button>'
       : '';
     return '<div class="frow' + (r.me ? " me" : "") + (r.played ? "" : " pending") + '">' +
       rankCell +
       '<span class="avatar"><span>' + esc(nm[0].toUpperCase()) + '</span></span>' +
-      '<span class="name"><span class="nm">' + esc(nm) + '</span>' + sub + '</span>' +
+      '<span class="name"><span class="nm">' + esc(nm) + '</span><small' + (r.played ? "" : ' class="pend"') + '>' + sub + '</small></span>' +
       result + menu +
       '</div>';
   }
