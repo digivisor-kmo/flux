@@ -861,6 +861,50 @@
   .ob-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: background 0.2s ease, box-shadow 0.2s ease; }
   .ob-dots i.on { background: var(--c0); box-shadow: 0 0 8px rgba(var(--c0-rgb),.7); }
   @keyframes obIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ============ campagne: tier-voortgang + slot ============ */
+  .tier.locked { border-style: dashed; opacity: 0.85; cursor: default; }
+  .tier.locked:active { transform: none; }
+  .tier.locked .prev { background: rgba(255,255,255,0.03); }
+  .tier .prev .lockicon { width: 20px; height: 20px; color: var(--label); }
+  .tier .tprog { flex: none; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .tier .tprog .tp-count { font: 500 13px/1 var(--mono); color: var(--c0); text-shadow: 0 0 10px rgba(var(--c0-rgb),.35); }
+  .tier .tprog .tp-par { font: 500 9px/1 var(--mono); color: var(--c2); letter-spacing: 0.06em; }
+  .tier .tlock { flex: none; display: flex; align-items: center; gap: 7px; color: var(--label); }
+  .tier .tlock svg { width: 15px; height: 15px; }
+  .tier .tlock .tl-cond { font: 500 8.5px/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; text-align: left; }
+  .tier.locked .tinfo h3, .tier.locked .tinfo .k { color: var(--label); }
+
+  /* ============ level-select: 24 genummerde orbs ============ */
+  #scr-levels { padding-top: 14px; }
+  .levelgrid {
+    flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px 14px;
+    align-content: center; padding: 8px 4px; max-width: 360px; width: 100%; margin: 0 auto;
+  }
+  .lorb {
+    aspect-ratio: 1; border: none; cursor: pointer; position: relative; border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 33% 28%, rgba(255,255,255,.30), rgba(180,220,255,.05) 38%, rgba(8,14,32,.5) 66%);
+    border: 1px solid var(--glas-rand);
+    box-shadow: 0 5px 9px rgba(0,0,0,.5), inset -3px -4px 8px rgba(0,0,20,.5), inset 2px 3px 6px rgba(255,255,255,.1);
+    transition: transform 0.14s ease, box-shadow 0.2s ease;
+  }
+  .lorb::before { content: ""; position: absolute; left: 16%; top: 12%; width: 42%; height: 32%;
+    border-radius: 50%; background: linear-gradient(158deg, rgba(255,255,255,.5), rgba(255,255,255,0) 70%); pointer-events: none; }
+  .lorb:active { transform: scale(0.93); }
+  .lorb .lnum { position: relative; z-index: 1; font: 500 16px/1 var(--mono); color: var(--muted); }
+  .lorb .lbadge { position: absolute; top: -3px; right: -3px; z-index: 2; width: 17px; height: 17px; border-radius: 50%;
+    display: grid; place-items: center; font: 700 9px/1 var(--font);
+    background: var(--bg-boven); border: 1px solid var(--glas-rand); }
+  /* opgelost (niet op par): zachte violet gloed + check */
+  .lorb.done { box-shadow: 0 5px 9px rgba(0,0,0,.5), 0 0 12px rgba(var(--c1-rgb),.3), inset -3px -4px 8px rgba(0,0,20,.5), inset 2px 3px 6px rgba(255,255,255,.1); border-color: rgba(var(--c1-rgb),.5); }
+  .lorb.done .lnum { color: var(--ink); }
+  .lorb.done .lbadge { color: var(--c1); border-color: rgba(var(--c1-rgb),.6); box-shadow: 0 0 8px rgba(var(--c1-rgb),.5); }
+  /* op par: cyaan gloed + ster */
+  .lorb.par { box-shadow: 0 5px 9px rgba(0,0,0,.5), 0 0 16px rgba(var(--c0-rgb),.5), inset -3px -4px 8px rgba(0,0,20,.5), inset 2px 3px 6px rgba(255,255,255,.14); border-color: rgba(var(--c0-rgb),.65); }
+  .lorb.par .lnum { color: var(--ink); }
+  .lorb.par .lbadge { color: var(--c0); border-color: rgba(var(--c0-rgb),.7); box-shadow: 0 0 8px rgba(var(--c0-rgb),.7); }
+  #levelsNote { margin-top: 8px; padding: 0 20px calc(6px + env(safe-area-inset-bottom)); }
 </style>
 </head>
 <body>
@@ -1042,6 +1086,20 @@
     </div>
   </section>
 
+  <!-- ============ LEVEL-SELECT (24 puzzels per tier) ============ -->
+  <section class="screen levels" id="scr-levels">
+    <div class="gametop">
+      <button class="icon" id="levelsBack" aria-label="Back">←</button>
+      <div class="mid">
+        <div class="mode" id="levelsTitle">Starter</div>
+        <div class="modesub" id="levelsSub">0 / 24</div>
+      </div>
+      <div class="gt-right" style="width:38px"></div>
+    </div>
+    <div class="levelgrid" id="levelGrid"></div>
+    <div class="notice" id="levelsNote">Replay any puzzle to beat your best. Solve all 24 to unlock the next depth.</div>
+  </section>
+
 </div>
 
 <!-- tab-bar: enkel iconen -->
@@ -1158,6 +1216,17 @@
     <button class="btn ghost" id="winBack">Done</button>
     <button class="btn" id="winShareBtn" style="display:none">Share</button>
     <button class="btn" id="winNext">Next</button>
+  </div>
+</div>
+
+<!-- personal-best popup voor een reeds opgeloste campagne-puzzel -->
+<div class="win sheet" id="campStat" role="dialog" aria-labelledby="campStatTitle">
+  <button class="sheetclose" id="campStatClose" aria-label="Close">×</button>
+  <h3 id="campStatTitle">Puzzle 1</h3>
+  <p id="campStatSub">Starter · your personal best</p>
+  <div class="winstats" id="campStatStats"></div>
+  <div class="actions">
+    <button class="btn" id="campStatPlay">Play again</button>
   </div>
 </div>
 
@@ -1354,6 +1423,41 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     nhard:   { label: "Hard",   desc: "4×4 · 3 links", size: 4, links: 3, kMin: 7, kMax: 9,  color: "#4DE3FF", deep: "#0E93B5" },
     nexpert: { label: "Expert", desc: "5×5 · 3 links", size: 5, links: 3, kMin: 9, kMax: 13, color: "#A78BFA", deep: "#5B3FC4" }
   };
+
+  /* ================= campagne: 24 vaste puzzels per tier (vervangt vrij spel) ================= */
+  const TIER_ORDER = ["starter", "junior", "expert", "master", "wizard"];
+  const CAMP_N = 24;
+  /* deterministische puzzel per (tier, index): zelfde voor iedereen; moeilijkheid loopt op binnen de tier */
+  function campPuzzle(tier, idx){
+    const d = FREE_DIFFS[tier];
+    const k = d.kMin + Math.round((d.kMax - d.kMin) * idx / (CAMP_N - 1));
+    const rng = FluxCore.seededRng(FluxCore.hashStr("camp-" + tier + "-" + idx));
+    let g = FluxCore.generate(d.size, d.states, TARGET, k, rng, true);
+    if (!g){ const rng2 = FluxCore.seededRng(FluxCore.hashStr("camp2-" + tier + "-" + idx)); g = FluxCore.generate(d.size, d.states, TARGET, k, rng2, false); }
+    return { ...g, cfg: d };
+  }
+  /* persoonlijke voortgang/best per puzzel (lokaal in het prototype) */
+  const campKey = (tier, idx) => "flux-camp-" + tier + "-" + idx;
+  const campBest = (tier, idx) => store.get(campKey(tier, idx), null);
+  function saveCampBest(tier, idx, res){
+    const prev = campBest(tier, idx);
+    /* best = minst zetten, dan snelste tijd; onpar zodra ooit op par gehaald */
+    if (!prev || res.moves < prev.moves || (res.moves === prev.moves && res.timeMs < prev.timeMs)){
+      store.set(campKey(tier, idx), { moves: res.moves, par: res.par, timeMs: res.timeMs, time: res.time,
+        onpar: (prev && prev.onpar) || res.onpar });
+    } else if (res.onpar && !prev.onpar){
+      store.set(campKey(tier, idx), { ...prev, onpar: true });
+    }
+  }
+  const tierSolved = tier => { let n = 0; for (let i = 0; i < CAMP_N; i++) if (campBest(tier, i)) n++; return n; };
+  const tierPar    = tier => { let n = 0; for (let i = 0; i < CAMP_N; i++){ const b = campBest(tier, i); if (b && b.onpar) n++; } return n; };
+  const tierComplete = tier => tierSolved(tier) === CAMP_N;
+  function tierUnlocked(tier){
+    const i = TIER_ORDER.indexOf(tier);
+    if (i <= 0) return true;
+    return tierComplete(TIER_ORDER[i - 1]);
+  }
+
   const randInt = n => Math.floor(Math.random() * n);
   /* genereer een gegarandeerd oplosbare Numbers-puzzel: scramble vanuit alles-groen.
      Terug-tikken van dezelfde scramble-set lost hem altijd op (toggle is zijn eigen inverse). */
@@ -1424,7 +1528,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     const prevIdx = TAB_ORDER.indexOf(curScreen);
     document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
     $("scr-"+id).classList.add("active");
-    tabbar.classList.toggle("hidden", id === "game");
+    tabbar.classList.toggle("hidden", id === "game" || id === "levels");
     if (id !== "game") hideWin();
     tabbar.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.tab === id));
     const idx = TAB_ORDER.indexOf(id);
@@ -1670,23 +1774,72 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     const pat = states >= 3 ? ["p0","p1","p2","p2","p0","p1"] : ["p0","p1","pe","p1","p0","p1"];
     return '<span class="pgrid">' + pat.map(c => '<i class="' + c + '"></i>').join("") + '</span>';
   }
+  const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
+  const LOCK_ICON = '<svg class="lockicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
+
   function buildTiers(){
-    /* Numbers is in deze versie verborgen → altijd de klassieke dieptes */
-    const table = FREE_DIFFS;
     freeCards.innerHTML = "";
-    Object.keys(table).forEach(key => {
-      const d = table[key];
+    TIER_ORDER.forEach((key, i) => {
+      const d = FREE_DIFFS[key];
+      const unlocked = tierUnlocked(key);
       const c = document.createElement("button");
-      c.className = "tier";
+      c.className = "tier" + (unlocked ? "" : " locked");
       c.style.setProperty("--tc", d.color);
-      c.setAttribute("aria-label", d.label + ", " + d.desc);
+      let right;
+      if (unlocked){
+        const solved = tierSolved(key), par = tierPar(key);
+        right = '<span class="tprog"><span class="tp-count">' + solved + '/' + CAMP_N + '</span>' +
+          (par > 0 ? '<span class="tp-par">✦ ' + par + '</span>' : '') + '</span>';
+      } else {
+        const prevKey = TIER_ORDER[i - 1], prev = FREE_DIFFS[prevKey];
+        const need = CAMP_N - tierSolved(prevKey);
+        right = '<span class="tlock">' + LOCK_SVG +
+          '<span class="tl-cond">' + need + ' more<br>' + prev.label + '</span></span>';
+      }
+      c.setAttribute("aria-label", d.label + ", " + d.desc + (unlocked ? "" : ", locked"));
       c.innerHTML =
-        '<span class="prev">' + tierPreview(d.states) + '</span>' +
+        '<span class="prev">' + (unlocked ? tierPreview(d.states) : LOCK_ICON) + '</span>' +
         '<span class="tinfo"><h3>' + d.label + '</h3><span class="k">' + d.desc + '</span></span>' +
-        '<span class="chev">›</span>';
-      c.addEventListener("click", ()=>startGame({ type:"free", key }));
+        right;
+      if (unlocked) c.addEventListener("click", ()=>openLevels(key));
       freeCards.appendChild(c);
     });
+  }
+
+  /* ================= level-select ================= */
+  let campTier = null;
+  function openLevels(tier){ campTier = tier; buildLevelGrid(tier); show("levels"); }
+  function buildLevelGrid(tier){
+    const d = FREE_DIFFS[tier];
+    $("levelsTitle").textContent = d.label;
+    $("levelsSub").textContent = tierSolved(tier) + " / " + CAMP_N + " solved · " + tierPar(tier) + " on par";
+    const grid = $("levelGrid"); grid.innerHTML = "";
+    for (let i = 0; i < CAMP_N; i++){
+      const b = campBest(tier, i);
+      const btn = document.createElement("button");
+      btn.className = "lorb" + (b ? (b.onpar ? " par" : " done") : "");
+      btn.setAttribute("aria-label", "Puzzle " + (i + 1) + (b ? (b.onpar ? ", solved on par" : ", solved") : ", not solved"));
+      btn.innerHTML = '<span class="lnum">' + (i + 1) + '</span>' +
+        (b ? '<span class="lbadge">' + (b.onpar ? "✦" : "✓") + '</span>' : '');
+      btn.addEventListener("click", ()=>{
+        if (campBest(tier, i)) openCampStat(tier, i);
+        else startGame({ type: "campaign", tier, idx: i });
+      });
+      grid.appendChild(btn);
+    }
+  }
+
+  /* personal-best popup voor een reeds opgeloste puzzel */
+  let campStatSel = { tier: null, idx: -1 };
+  function openCampStat(tier, idx){
+    campStatSel = { tier, idx };
+    const b = campBest(tier, idx), d = FREE_DIFFS[tier];
+    $("campStatTitle").textContent = "Puzzle " + (idx + 1);
+    $("campStatSub").textContent = d.label + " · your personal best";
+    $("campStatStats").innerHTML = [["Moves", pad(b.moves)], ["Par", pad(b.par)], ["Time", b.time],
+        ["Result", b.onpar ? "On par" : "+" + (b.moves - b.par)]]
+      .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
+    openSheet("campStat");
   }
 
   /* ================= vrienden (echt, via Supabase) ================= */
@@ -2029,6 +2182,19 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
   function startGame(c){
     ctx = c;
+    if (c.type === "campaign"){
+      c.numbers = false;
+      applyGameChrome(false);
+      const p = campPuzzle(c.tier, c.idx);
+      cfg = p.cfg;
+      setAccent(cfg);
+      $("gMode").textContent = cfg.label;
+      $("gModeSub").textContent = "Puzzle " + (c.idx + 1) + " / " + CAMP_N;
+      $("newBtn").style.display = "none";
+      show("game"); buildBoard(cfg.size); loadPuzzle(p);
+      startTimer();
+      return;
+    }
     if (c.type === "daily"){
       c.numbers = false;                             /* daily is altijd classic */
       applyGameChrome(false);
@@ -2146,6 +2312,20 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       return;
     }
 
+    if (ctx.type === "campaign"){
+      saveCampBest(ctx.tier, ctx.idx, { moves, par, time: tStr, timeMs: elapsed, onpar });
+      $("winShareBtn").style.display = "none";
+      $("winTitle").textContent = onpar ? "On par!" : "Solved";
+      $("winSub").textContent = FREE_DIFFS[ctx.tier].label + " · Puzzle " + (ctx.idx + 1) + " / " + CAMP_N;
+      stats.innerHTML = [["Moves", pad(moves)], ["Par", pad(par)], ["Time", tStr]]
+        .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
+      stats.style.display = "flex"; share.style.display = "none"; friends.style.display = "none";
+      $("winNext").style.display = "";
+      $("winNext").textContent = ctx.idx < CAMP_N - 1 ? "Next" : "Back to levels";
+      setTimeout(()=>{ win.classList.add("show"); $("backdrop").classList.add("show"); }, 520);
+      return;
+    }
+
     if (ctx.type === "daily"){
       /* resultaat eerst opslaan, dan het resultaatscherm opbouwen */
       const attempts = Math.max(1, store.get(attKey(), 1));
@@ -2184,6 +2364,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
         .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
       stats.style.display = "flex"; share.style.display = "none"; friends.style.display = "none";
     }
+    $("winNext").textContent = "Next";
     $("winNext").style.display = ctx.type === "daily" ? "none" : "";
     setTimeout(()=>{
       win.classList.add("show");
@@ -2200,12 +2381,24 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* ================= wiring ================= */
   function leaveGame(){
     saveProg(); stopTimer(); hideWin();
+    if (ctx && ctx.type === "campaign"){ buildLevelGrid(campTier); show("levels"); return; }
     show(ctx && ctx.type === "daily" ? "vandaag" : "spelen");
     refreshVandaag();
   }
   $("backBtn").addEventListener("click", leaveGame);
   $("winBack").addEventListener("click", leaveGame);
-  $("winNext").addEventListener("click", ()=>{ if (ctx.type === "free") newFreePuzzle(); });
+  $("winNext").addEventListener("click", ()=>{
+    if (ctx.type === "campaign"){
+      hideWin();
+      if (ctx.idx < CAMP_N - 1) startGame({ type: "campaign", tier: ctx.tier, idx: ctx.idx + 1 });
+      else { buildLevelGrid(campTier); show("levels"); }
+      return;
+    }
+    if (ctx.type === "free") newFreePuzzle();
+  });
+  $("levelsBack").addEventListener("click", ()=>{ buildTiers(); show("spelen"); });
+  $("campStatClose").addEventListener("click", closeSheets);
+  $("campStatPlay").addEventListener("click", ()=>{ closeSheets(); startGame({ type: "campaign", tier: campStatSel.tier, idx: campStatSel.idx }); });
   $("winShareBtn").addEventListener("click", async ()=>{
     if (!shareText) return;
     if (navigator.share){
@@ -2242,7 +2435,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     }
   }
   function closeSheets(){
-    ["help","connect","settings"].forEach(i => $(i).classList.remove("show"));
+    ["help","connect","settings","campStat"].forEach(i => $(i).classList.remove("show"));
     $("backdrop").classList.remove("show");
     stopDemo();
   }
