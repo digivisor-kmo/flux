@@ -1493,7 +1493,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     /* best = minst zetten, dan snelste tijd; onpar zodra ooit op par gehaald */
     if (!prev || res.moves < prev.moves || (res.moves === prev.moves && res.timeMs < prev.timeMs)){
       store.set(campKey(tier, idx), { moves: res.moves, par: res.par, timeMs: res.timeMs, time: res.time,
-        onpar: (prev && prev.onpar) || res.onpar });
+        hints: res.hints | 0, onpar: (prev && prev.onpar) || res.onpar });
       wrote = true;
     } else if (res.onpar && !prev.onpar){
       store.set(campKey(tier, idx), { ...prev, onpar: true });
@@ -1536,7 +1536,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   function campMergeRemote(row){
     const key = campKey(row.tier, row.idx);
     const local = store.get(key, null);
-    const remote = { moves: row.moves, par: row.par, timeMs: row.time_ms, time: fmtTime(row.time_ms), onpar: !!row.onpar };
+    const remote = { moves: row.moves, par: row.par, timeMs: row.time_ms, time: fmtTime(row.time_ms), hints: row.hints | 0, onpar: !!row.onpar };
     const best = betterBest(local, remote);
     if (JSON.stringify(best) !== JSON.stringify(local)){ store.set(key, best); return true; }
     return false;
@@ -1556,7 +1556,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       const dirty = store.get(CAMP_DIRTY, []);
       const changes = dirty.map(k => {
         const [tier, idxStr] = k.split("|"); const idx = +idxStr; const b = campBest(tier, idx);
-        return b ? { tier, idx, moves: b.moves, par: b.par, time_ms: b.timeMs, onpar: !!b.onpar } : null;
+        return b ? { tier, idx, moves: b.moves, par: b.par, time_ms: b.timeMs, hints: b.hints | 0, onpar: !!b.onpar } : null;
       }).filter(Boolean);
       const { data, error } = await sb.rpc("sync_campaign", { changes });
       if (error) throw error;
@@ -1997,8 +1997,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     const b = campBest(tier, idx), d = FREE_DIFFS[tier];
     $("campStatTitle").textContent = "Puzzle " + (idx + 1);
     $("campStatSub").textContent = d.label + " · your personal best";
-    $("campStatStats").innerHTML = [["Moves", pad(b.moves)], ["Par", pad(b.par)], ["Time", b.time],
-        ["Result", b.onpar ? "On par" : "+" + (b.moves - b.par)]]
+    $("campStatStats").innerHTML = [["Moves", pad(b.moves)], ["Hints", (b.hints | 0)], ["Par", pad(b.par)], ["Time", b.time]]
       .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
     openSheet("campStat");
   }
@@ -2478,13 +2477,13 @@ if (typeof module !== "undefined") module.exports = FluxCore;
 
     if (ctx.type === "campaign"){
       const wasComplete = tierComplete(ctx.tier);
-      saveCampBest(ctx.tier, ctx.idx, { moves, par, time: tStr, timeMs: elapsed, onpar });
+      saveCampBest(ctx.tier, ctx.idx, { moves, par, time: tStr, timeMs: elapsed, hints: hintsUsed, onpar });
       /* net de hele tier uitgespeeld → belonend flourish bovenop het win-geluid */
       if (!wasComplete && tierComplete(ctx.tier)) setTimeout(()=>{ playTierComplete(); haptic(HAP.tierDone); }, 260);
       $("winShareBtn").style.display = "none";
       $("winTitle").textContent = onpar ? "On par!" : "Solved";
       $("winSub").textContent = FREE_DIFFS[ctx.tier].label + " · Puzzle " + (ctx.idx + 1) + " / " + CAMP_N;
-      stats.innerHTML = [["Moves", pad(moves)], ["Par", pad(par)], ["Time", tStr]]
+      stats.innerHTML = [["Moves", pad(moves)], ["Hints", hintsUsed], ["Par", pad(par)], ["Time", tStr]]
         .map(s => '<div class="ws"><span class="k">' + s[0] + '</span><span class="v">' + s[1] + '</span></div>').join("");
       stats.style.display = "flex"; share.style.display = "none"; friends.style.display = "none";
       $("winNext").style.display = "";
