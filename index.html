@@ -1519,12 +1519,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       TIER_ORDER.forEach(t => { for (let i = 0; i < CAMP_N; i++) store.del(campKey(t, i)); });
       store.del("flux-camp-dirty"); store.del("flux-camp-seeded");
       store.set("flux-camp-ver", CAMP_VER);
-      store.set("flux-camp-wipe-remote", true);   /* ook de eigen server-rijen wissen zodra ingelogd */
     }
-  }
-  async function campWipeRemote(){
-    if (!(sb && session) || !store.get("flux-camp-wipe-remote", false)) return;
-    try { const { error } = await sb.from("campaign_progress").delete().gte("idx", 0); if (!error) store.del("flux-camp-wipe-remote"); } catch(e){}
   }
 
   /* ================= campagne-sync (local-first, conflictvrij "best wint") =================
@@ -1569,22 +1564,18 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     if (!(sb && session) || campSyncing || !navigator.onLine) return;
     campSyncing = true;
     try {
-      await campWipeRemote();          /* bij nieuwe puzzelset-versie: eigen server-rijen eenmalig wissen */
-      campSeedDirtyOnce();
-      const dirty = store.get(CAMP_DIRTY, []);
-      const changes = dirty.map(k => {
-        const [tier, idxStr] = k.split("|"); const idx = +idxStr; const b = campBest(tier, idx);
-        return b ? { tier, idx, moves: b.moves, par: b.par, time_ms: b.timeMs, hints: b.hints | 0, onpar: !!b.onpar } : null;
-      }).filter(Boolean);
+      /* stuur ALTIJD je volledige lokale voortgang (max 120 kleine records). De server-merge
+         is "best wint" en idempotent, dus dit is zelfherstellend: een toestel dat de data nog
+         heeft, zet ze vanzelf terug. Geen destructieve wipes, geen dirty-boekhouding nodig. */
+      const changes = [];
+      TIER_ORDER.forEach(tier => { for (let i = 0; i < CAMP_N; i++){ const b = campBest(tier, i);
+        if (b) changes.push({ tier, idx: i, moves: b.moves, par: b.par, time_ms: b.timeMs, hints: b.hints | 0, onpar: !!b.onpar }); } });
       const { data, error } = await sb.rpc("sync_campaign", { changes });
       if (error) throw error;
-      /* enkel de zonet gepushte sleutels verwijderen (nieuwe die intussen bijkwamen blijven staan) */
-      const still = store.get(CAMP_DIRTY, []).filter(k => !dirty.includes(k));
-      store.set(CAMP_DIRTY, still);
       let changed = false;
       (data || []).forEach(row => { if (campMergeRemote(row)) changed = true; });
       if (changed) campRefreshViews();
-    } catch(e){ /* offline of fout: dirty blijft staan, later opnieuw */ }
+    } catch(e){ /* offline of fout: later opnieuw */ }
     finally { campSyncing = false; }
   }
   window.addEventListener("online", campSync);
