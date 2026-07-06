@@ -2088,20 +2088,35 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   }
 
   function reset(){
-    if (moves > 0) bumpAttempts();   /* geen extra poging tellen als er nog niets gespeeld is */
+    if (ctx && ctx.type === "daily"){
+      /* Daily: enkel het BORD gaat terug naar start. Timer, gebruikte hints én het
+         aantal moves blijven staan — je kan niet valsspelen door te herstarten.
+         De reset gebeurt via ECHTE, gelogde zetten die het bord naar start brengen,
+         zodat de serververificatie (die de zetten herspeelt) blijft kloppen. */
+      if (locked) return;                 /* na winst niet meer resetten */
+      if (moves > 0) bumpAttempts();      /* poging tellen (informatief) */
+      const S = cfg.states, N = state.length;
+      const cnt = new Array(N).fill(0);
+      for (const j of dailyTaps) cnt[j] = (cnt[j] + 1) % S;   /* netto tikken per bron-cel */
+      for (let i = 0; i < N; i++){
+        const y = (S - cnt[i] % S) % S;                       /* aanvullen tot een volledige cyclus = terug naar start */
+        for (let k = 0; k < y; k++){
+          FluxCore.applyTap(state, i, cfg.size, cfg.states);
+          dailyTaps.push(i); moves++;
+        }
+      }
+      movesEl.textContent = pad(moves);
+      clearHint(); renderAll(); saveProg();
+      return;
+    }
+    /* Vrij spel: volledige reset is prima (geen ranglijst) */
+    if (moves > 0) bumpAttempts();
     state = start.slice();
     dailyTaps = [];
     clearHint();
     moves = 0; movesEl.textContent = "00";
-    if (ctx && ctx.type === "daily"){
-      /* daily: bord opnieuw, maar de klok loopt gewoon door (en hints blijven geteld) */
-      saveProg();
-    } else {
-      hintsUsed = 0;
-      resetTimer();
-    }
-    renderAll(); hideWin();
-    if (!(ctx && ctx.type === "daily")) startTimer();   /* vrij spel: klok loopt meteen weer */
+    hintsUsed = 0;
+    resetTimer(); renderAll(); hideWin(); startTimer();
   }
 
   /* ================= win ================= */
