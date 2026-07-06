@@ -1489,13 +1489,17 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   const campBest = (tier, idx) => store.get(campKey(tier, idx), null);
   function saveCampBest(tier, idx, res){
     const prev = campBest(tier, idx);
+    let wrote = false;
     /* best = minst zetten, dan snelste tijd; onpar zodra ooit op par gehaald */
     if (!prev || res.moves < prev.moves || (res.moves === prev.moves && res.timeMs < prev.timeMs)){
       store.set(campKey(tier, idx), { moves: res.moves, par: res.par, timeMs: res.timeMs, time: res.time,
         onpar: (prev && prev.onpar) || res.onpar });
+      wrote = true;
     } else if (res.onpar && !prev.onpar){
       store.set(campKey(tier, idx), { ...prev, onpar: true });
+      wrote = true;
     }
+    if (wrote){ campMarkDirty(tier, idx); campSyncSoon(); }   /* achtergrond-sync, non-blocking */
   }
   const tierSolved = tier => { let n = 0; for (let i = 0; i < CAMP_N; i++) if (campBest(tier, i)) n++; return n; };
   const tierPar    = tier => { let n = 0; for (let i = 0; i < CAMP_N; i++){ const b = campBest(tier, i); if (b && b.onpar) n++; } return n; };
@@ -1505,6 +1509,67 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     if (i <= 0) return true;
     return tierComplete(TIER_ORDER[i - 1]);
   }
+
+  /* ================= campagne-sync (local-first, conflictvrij "best wint") =================
+     De UI leest/schrijft altijd lokaal (meteen, offline). De cloud is enkel een spiegel op
+     de achtergrond: nooit iets waar de gebruiker op wacht. Mergen = de beste van twee nemen,
+     dus volgorde-onafhankelijk en veilig met meerdere toestellen. */
+  const CAMP_DIRTY = "flux-camp-dirty";
+  function campMarkDirty(tier, idx){
+    const set = new Set(store.get(CAMP_DIRTY, []));
+    set.add(tier + "|" + idx);
+    store.set(CAMP_DIRTY, [...set]);
+  }
+  /* bestaande lokale voortgang (van vóór de sync) één keer als "te pushen" markeren */
+  function campSeedDirtyOnce(){
+    if (store.get("flux-camp-seeded", false)) return;
+    const set = new Set(store.get(CAMP_DIRTY, []));
+    TIER_ORDER.forEach(t => { for (let i = 0; i < CAMP_N; i++) if (campBest(t, i)) set.add(t + "|" + i); });
+    store.set(CAMP_DIRTY, [...set]);
+    store.set("flux-camp-seeded", true);
+  }
+  function betterBest(a, b){
+    if (!a) return b; if (!b) return a;
+    const base = (b.moves < a.moves || (b.moves === a.moves && b.timeMs < a.timeMs)) ? b : a;
+    return { ...base, onpar: !!(a.onpar || b.onpar) };
+  }
+  function campMergeRemote(row){
+    const key = campKey(row.tier, row.idx);
+    const local = store.get(key, null);
+    const remote = { moves: row.moves, par: row.par, timeMs: row.time_ms, time: fmtTime(row.time_ms), onpar: !!row.onpar };
+    const best = betterBest(local, remote);
+    if (JSON.stringify(best) !== JSON.stringify(local)){ store.set(key, best); return true; }
+    return false;
+  }
+  function campRefreshViews(){
+    /* stil bijwerken, zonder de entree-animatie opnieuw af te spelen */
+    if (curScreen === "spelen") buildTiers(true);
+    else if (curScreen === "levels" && campTier) buildLevelGrid(campTier, true);
+  }
+  let campSyncing = false, campSyncTimer = null;
+  function campSyncSoon(){ clearTimeout(campSyncTimer); campSyncTimer = setTimeout(campSync, 1500); }
+  async function campSync(){
+    if (!(sb && session) || campSyncing || !navigator.onLine) return;
+    campSyncing = true;
+    try {
+      campSeedDirtyOnce();
+      const dirty = store.get(CAMP_DIRTY, []);
+      const changes = dirty.map(k => {
+        const [tier, idxStr] = k.split("|"); const idx = +idxStr; const b = campBest(tier, idx);
+        return b ? { tier, idx, moves: b.moves, par: b.par, time_ms: b.timeMs, onpar: !!b.onpar } : null;
+      }).filter(Boolean);
+      const { data, error } = await sb.rpc("sync_campaign", { changes });
+      if (error) throw error;
+      /* enkel de zonet gepushte sleutels verwijderen (nieuwe die intussen bijkwamen blijven staan) */
+      const still = store.get(CAMP_DIRTY, []).filter(k => !dirty.includes(k));
+      store.set(CAMP_DIRTY, still);
+      let changed = false;
+      (data || []).forEach(row => { if (campMergeRemote(row)) changed = true; });
+      if (changed) campRefreshViews();
+    } catch(e){ /* offline of fout: dirty blijft staan, later opnieuw */ }
+    finally { campSyncing = false; }
+  }
+  window.addEventListener("online", campSync);
 
   const randInt = n => Math.floor(Math.random() * n);
   /* genereer een gegarandeerd oplosbare Numbers-puzzel: scramble vanuit alles-groen.
@@ -1825,13 +1890,14 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
   const LOCK_ICON = '<svg class="lockicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
 
-  function buildTiers(){
+  function buildTiers(noAnim){
     freeCards.innerHTML = "";
     TIER_ORDER.forEach((key, i) => {
       const d = FREE_DIFFS[key];
       const unlocked = tierUnlocked(key);
       const c = document.createElement("button");
       c.className = "tier" + (unlocked ? "" : " locked");
+      if (noAnim) c.style.animation = "none";
       c.style.setProperty("--tc", d.color);
       let right;
       if (unlocked){
@@ -1857,7 +1923,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* ================= level-select ================= */
   let campTier = null;
   function openLevels(tier){ campTier = tier; buildLevelGrid(tier); show("levels"); }
-  function buildLevelGrid(tier){
+  function buildLevelGrid(tier, noAnim){
     const d = FREE_DIFFS[tier];
     $("levelsTitle").textContent = d.label;
     $("levelsSub").textContent = tierSolved(tier) + " / " + CAMP_N + " solved · " + tierPar(tier) + " on par";
@@ -1866,6 +1932,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       const b = campBest(tier, i);
       const btn = document.createElement("button");
       btn.className = "lorb" + (b ? (b.onpar ? " par" : " done") : "");
+      if (noAnim) btn.style.animation = "none";
       btn.setAttribute("aria-label", "Puzzle " + (i + 1) + (b ? (b.onpar ? ", solved on par" : ", solved") : ", not solved"));
       btn.innerHTML = '<span class="lnum">' + (i + 1) + '</span>' +
         (b ? '<span class="lbadge">' + (b.onpar ? "✦" : "✓") + '</span>' : '');
@@ -2533,6 +2600,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   window.addEventListener("pagehide", saveProg);
   document.addEventListener("visibilitychange", ()=>{
     if (document.visibilityState === "hidden"){ saveProg(); return; }
+    campSync();                 /* terug in de app: campagne-voortgang stil bijwerken */
     /* teruggekeerd na middernacht terwijl de app open bleef: nieuwe dag oppikken,
        maar niet midden in een lopend potje het bord onder je uit trekken */
     const now = dayKeyNow();
@@ -2675,6 +2743,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       await loadProfile();
       renderAuth();               /* naam + vriendencode invullen zodra profiel binnen is */
       await syncFromServer();
+      campSync();                 /* campagne-voortgang op de achtergrond koppelen aan het account */
     }
     refreshVandaag();
   }
