@@ -87,10 +87,8 @@
     padding: 18px 26px calc(96px + env(safe-area-inset-bottom)); }
   .screen.active { display: flex; }
   .screen .content { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  .screen .content.sl { animation: slideL 0.5s var(--spring-in); }
-  .screen .content.sr { animation: slideR 0.5s var(--spring-in); }
-  @keyframes slideL { from { opacity: 0; transform: translateY(22px); filter: blur(4px);} to { opacity: 1; transform: translateY(0); filter: blur(0);} }
-  @keyframes slideR { from { opacity: 0; transform: translateY(22px); filter: blur(4px);} to { opacity: 1; transform: translateY(0); filter: blur(0);} }
+  .screen .content.sl, .screen .content.sr { animation: contentIn 0.26s ease; }
+  @keyframes contentIn { from { opacity: 0; } to { opacity: 1; } }
   .screen.game.active { animation: screenIn 0.4s var(--spring-in); }
   @keyframes screenIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   .screen.game { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
@@ -473,10 +471,23 @@
     filter: drop-shadow(0 0 5px rgba(var(--c1-rgb),.95)) drop-shadow(0 0 11px rgba(var(--c1-rgb),.5)); }
   .tile.s2 .core { clip-path: var(--morf2); background: var(--c2);
     filter: drop-shadow(0 0 5px rgba(var(--c2-rgb),.95)) drop-shadow(0 0 11px rgba(var(--c2-rgb),.5)); }
-  /* staat-halo op de orb */
-  .tile.s0 { box-shadow: 0 6px 10px rgba(0,0,0,.55), 0 0 12px rgba(var(--c0-rgb),.24), inset -4px -6px 10px rgba(0,0,20,.5), inset 3px 4px 8px rgba(255,255,255,.14); }
-  .tile.s1 { box-shadow: 0 6px 10px rgba(0,0,0,.55), 0 0 12px rgba(var(--c1-rgb),.24), inset -4px -6px 10px rgba(0,0,20,.5), inset 3px 4px 8px rgba(255,255,255,.14); }
-  .tile.s2 { box-shadow: 0 6px 10px rgba(0,0,0,.55), 0 0 12px rgba(var(--c2-rgb),.24), inset -4px -6px 10px rgba(0,0,20,.5), inset 3px 4px 8px rgba(255,255,255,.14); }
+  /* staat-halo op de orb: de hele bol schijnt mee in de kleur van het symbool
+     (sterke buitengloed + gekleurde binnengloed); box-shadow transitioneert vloeiend bij een tik */
+  .tile.s0 { box-shadow: 0 6px 10px rgba(0,0,0,.5), 0 0 22px rgba(var(--c0-rgb),.45), inset -4px -6px 10px rgba(0,0,20,.45), inset 3px 4px 8px rgba(255,255,255,.14), inset 0 0 18px rgba(var(--c0-rgb),.38); }
+  .tile.s1 { box-shadow: 0 6px 10px rgba(0,0,0,.5), 0 0 22px rgba(var(--c1-rgb),.45), inset -4px -6px 10px rgba(0,0,20,.45), inset 3px 4px 8px rgba(255,255,255,.14), inset 0 0 18px rgba(var(--c1-rgb),.38); }
+  .tile.s2 { box-shadow: 0 6px 10px rgba(0,0,0,.5), 0 0 22px rgba(var(--c2-rgb),.45), inset -4px -6px 10px rgba(0,0,20,.45), inset 3px 4px 8px rgba(255,255,255,.14), inset 0 0 18px rgba(var(--c2-rgb),.38); }
+  /* lichte kleurwas over het glas zelf, per staat */
+  .tile.s0 .core, .tile.s1 .core, .tile.s2 .core { z-index: 1; }
+  .tile.s0::after, .tile.s1::after, .tile.s2::after { pointer-events: none; }
+  .tile.s0 { background:
+    radial-gradient(circle at 50% 66%, rgba(var(--c0-rgb),.20), transparent 60%),
+    radial-gradient(circle at 33% 28%, rgba(255,255,255,.36), rgba(180,220,255,.07) 36%, rgba(8,14,32,.42) 62%, rgba(150,200,255,.12)); }
+  .tile.s1 { background:
+    radial-gradient(circle at 50% 66%, rgba(var(--c1-rgb),.20), transparent 60%),
+    radial-gradient(circle at 33% 28%, rgba(255,255,255,.36), rgba(180,220,255,.07) 36%, rgba(8,14,32,.42) 62%, rgba(150,200,255,.12)); }
+  .tile.s2 { background:
+    radial-gradient(circle at 50% 66%, rgba(var(--c2-rgb),.20), transparent 60%),
+    radial-gradient(circle at 33% 28%, rgba(255,255,255,.36), rgba(180,220,255,.07) 36%, rgba(8,14,32,.42) 62%, rgba(150,200,255,.12)); }
 
   .tile.enter { animation: enterTile 0.75s var(--spring-land) both; }
   @keyframes enterTile {
@@ -905,6 +916,43 @@
   .lorb.par .lnum { color: var(--ink); }
   .lorb.par .lbadge { color: var(--c0); border-color: rgba(var(--c0-rgb),.7); box-shadow: 0 0 8px rgba(var(--c0-rgb),.7); }
   #levelsNote { margin-top: 8px; padding: 0 20px calc(6px + env(safe-area-inset-bottom)); }
+
+  /* ============ snappy opbouw per pagina ============ */
+  @keyframes riseIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes orbPop { 0% { opacity: 0; transform: scale(.5); } 62% { opacity: 1; } 100% { opacity: 1; transform: scale(1); } }
+
+  /* home: titel + tiers golven binnen */
+  .homehead { animation: riseIn .5s var(--spring-in) backwards; }
+  #freeCards .tier { animation: riseIn .5s var(--spring-in) backwards; }
+  #freeCards .tier:nth-child(1){ animation-delay: .08s }
+  #freeCards .tier:nth-child(2){ animation-delay: .15s }
+  #freeCards .tier:nth-child(3){ animation-delay: .22s }
+  #freeCards .tier:nth-child(4){ animation-delay: .29s }
+  #freeCards .tier:nth-child(5){ animation-delay: .36s }
+
+  /* daily hero */
+  .dailyhero > * { animation: riseIn .5s var(--spring-in) backwards; }
+  .dailyhero > *:nth-child(1){ animation-delay: .04s }
+  .dailyhero > *:nth-child(2){ animation-delay: .10s }
+  .dailyhero > *:nth-child(3){ animation-delay: .16s }
+  .dailyhero > *:nth-child(4){ animation-delay: .22s }
+  .dailyhero > *:nth-child(5){ animation-delay: .28s }
+  .dailyhero > *:nth-child(6){ animation-delay: .34s }
+  .dailyhero > *:nth-child(7){ animation-delay: .40s }
+
+  /* friends: kop + invite + rijen */
+  .fhead { animation: riseIn .5s var(--spring-in) backwards; }
+  .btn.invite { animation: riseIn .5s var(--spring-in) .06s backwards; }
+  #ranking .frow { animation: riseIn .45s var(--spring-in) backwards; }
+
+  /* level-select: genummerde orbs in een diagonale golf (--i in JS gezet) */
+  .levels .gametop, #levelsNote { animation: riseIn .45s var(--spring-in) backwards; }
+  .lorb { animation: orbPop .45s var(--spring-morf) backwards; animation-delay: calc(var(--i, 0) * 26ms); }
+
+  @media (prefers-reduced-motion: reduce){
+    .homehead, #freeCards .tier, .dailyhero > *, .fhead, .btn.invite, #ranking .frow,
+    .levels .gametop, #levelsNote, .lorb { animation: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -1821,6 +1869,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       btn.setAttribute("aria-label", "Puzzle " + (i + 1) + (b ? (b.onpar ? ", solved on par" : ", solved") : ", not solved"));
       btn.innerHTML = '<span class="lnum">' + (i + 1) + '</span>' +
         (b ? '<span class="lbadge">' + (b.onpar ? "✦" : "✓") + '</span>' : '');
+      btn.style.setProperty("--i", Math.floor(i / 4) + (i % 4));   /* diagonale golf */
       btn.addEventListener("click", ()=>{
         if (campBest(tier, i)) openCampStat(tier, i);
         else startGame({ type: "campaign", tier, idx: i });
@@ -1963,6 +2012,8 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     let html = played.map((p,i) => frowHTML(p, i+1)).join("");
     html += notPlayed.map(p => frowHTML(p, "–")).join("");
     el.innerHTML = html;
+    /* gestaffelde binnenkomst van de rijen */
+    el.querySelectorAll(".frow").forEach((row, i) => { row.style.animationDelay = (0.05 + i * 0.05) + "s"; });
 
     if (participants.length === 1 && !participants[0].played){
       el.innerHTML += '<div class="notice" style="margin-top:12px">Add friends with the + button and play the daily to join in</div>';
