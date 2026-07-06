@@ -1689,27 +1689,72 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* ================= voorkeuren: geluid + haptiek ================= */
   let soundOn = store.get("flux-sound", true);
   let hapticsOn = store.get("flux-haptics", true);
-  function haptic(pattern){ if (hapticsOn && navigator.vibrate) navigator.vibrate(pattern); }
+  /* haptiek-patronen (Android; iOS ondersteunt navigator.vibrate niet) */
+  const HAP = {
+    tap: 8, hint: 6,
+    win:      [14, 30, 14, 30, 22],
+    winPar:   [14, 22, 14, 22, 14, 22, 34],
+    tierDone: [18, 40, 18, 40, 18, 60, 28],
+    dive: 12
+  };
+  function haptic(pattern){ if (hapticsOn && navigator.vibrate) { try { navigator.vibrate(pattern); } catch(e){} } }
 
-  /* lichte WebAudio: korte tik bij een zet, zacht akkoord bij winst */
-  let audioCtx = null;
+  /* ---- WebAudio: zachte, "onderwater"-klanken (bell/pluck + lichte echo) ---- */
+  let audioCtx = null, master = null, echo = null;
   function actx(){
-    if (!audioCtx){ try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ audioCtx = null; } }
+    if (!audioCtx){
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        master = audioCtx.createGain(); master.gain.value = 0.9; master.connect(audioCtx.destination);
+        /* subtiele gefilterde echo voor diepte */
+        echo = audioCtx.createDelay(); echo.delayTime.value = 0.16;
+        const fb = audioCtx.createGain(); fb.gain.value = 0.26;
+        const elp = audioCtx.createBiquadFilter(); elp.type = "lowpass"; elp.frequency.value = 1700;
+        const wet = audioCtx.createGain(); wet.gain.value = 0.5;
+        echo.connect(elp); elp.connect(fb); fb.connect(echo); elp.connect(wet); wet.connect(master);
+      } catch(e){ audioCtx = null; }
+    }
+    if (audioCtx && audioCtx.state === "suspended"){ audioCtx.resume().catch(()=>{}); }
     return audioCtx;
   }
-  function beep(freq, dur, when, gain){
-    const ac = actx(); if (!ac) return;
-    const o = ac.createOscillator(), g = ac.createGain();
-    o.type = "sine"; o.frequency.value = freq;
-    const t = ac.currentTime + (when || 0);
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(gain || 0.05, t + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.09));
-    o.connect(g); g.connect(ac.destination);
-    o.start(t); o.stop(t + (dur || 0.09) + 0.02);
+  /* één zachte stem: twee licht ontstemde sinussen door een lowpass, korte envelope */
+  function voice(freq, o){
+    o = o || {}; const ac = actx(); if (!ac) return;
+    const t = ac.currentTime + (o.when || 0);
+    const dur = o.dur || 0.24, peak = (o.gain == null ? 0.05 : o.gain);
+    const a = ac.createOscillator(), b = ac.createOscillator(), g = ac.createGain();
+    const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = o.cutoff || 2800; lp.Q.value = 0.7;
+    a.type = o.type || "sine"; b.type = o.type || "sine";
+    a.frequency.value = freq; b.frequency.value = freq * 1.006;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + (o.attack || 0.006));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    a.connect(lp); b.connect(lp); lp.connect(g);
+    g.connect(master); if (o.wet !== 0) g.connect(echo);
+    a.start(t); b.start(t); a.stop(t + dur + 0.03); b.stop(t + dur + 0.03);
   }
-  function playTick(){ if (soundOn) beep(520, 0.07, 0, 0.045); }
-  function playWin(){ if (soundOn) [523.25, 659.25, 783.99].forEach((f,i)=>beep(f, 0.5, i*0.09, 0.05)); }
+  /* pentatonisch: elke tik klinkt harmonisch, oplossen voelt muzikaal */
+  const PENTA = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+  function playTap(i, s){
+    if (!soundOn) return;
+    const idx = (Math.abs(i | 0) * 2 + (s | 0)) % PENTA.length;
+    voice(PENTA[idx], { dur: 0.28, gain: 0.05, cutoff: 3000 });
+    voice(PENTA[idx] * 2, { dur: 0.11, gain: 0.013, cutoff: 5200, when: 0.004 });   /* zachte sprankel */
+  }
+  function playWin(onpar){
+    if (!soundOn) return;
+    [392.00, 493.88, 587.33, 783.99].forEach((f, i) => voice(f, { dur: 0.6, gain: 0.05, cutoff: 3200, when: i * 0.085 }));
+    if (onpar) [1046.50, 1318.51].forEach((f, i) => voice(f, { dur: 0.5, gain: 0.02, cutoff: 6000, when: 0.34 + i * 0.08 }));
+  }
+  function playTierComplete(){
+    if (!soundOn) return;
+    [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50].forEach((f, i) => voice(f, { dur: 0.7, gain: 0.045, cutoff: 4200, when: i * 0.075 }));
+    voice(1567.98, { dur: 0.9, gain: 0.02, cutoff: 7000, when: 0.5 });
+  }
+  function playHint(){ if (soundOn){ voice(880, { dur: 0.18, gain: 0.03, cutoff: 5000 }); voice(1174.66, { dur: 0.22, gain: 0.018, cutoff: 6000, when: 0.06 }); } }
+  function playBlip(){ if (soundOn) voice(587.33, { dur: 0.14, gain: 0.04, cutoff: 3000 }); }
+  function playDive(){ if (soundOn) [523.25, 440.00, 349.23, 261.63].forEach((f, i) => voice(f, { dur: 0.7, gain: 0.04, cutoff: 2200, when: i * 0.08 })); }
+  function playTick(){ playBlip(); }   /* compat voor bestaande aanroepen */
 
   function applySettingsUI(){
     $("swSound").setAttribute("aria-checked", soundOn ? "true" : "false");
@@ -2242,6 +2287,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     for (let i=0;i<sol.solution.length;i++)
       if (sol.solution[i] > 0 && (best < 0 || sol.solution[i] > sol.solution[best])) best = i;
     hintTile = best; tiles[best].classList.add("hint"); hintsUsed++;
+    playHint(); haptic(HAP.hint);
   }
 
   function tap(i){
@@ -2253,7 +2299,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       paint(i, true, true);                        /* aangetikte tegel: knop-indruk (bron) */
       nLink[i].forEach(j => flipPartner(j));       /* partners: kaart-flip ter plaatse */
       moves++; movesEl.textContent = pad(moves);
-      haptic(8); playTick();
+      haptic(HAP.tap); playTap(i, state[i]);
       if (state.every(v => v === 1)) showWin();
       return;
     }
@@ -2262,7 +2308,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     clearHint();
     aff.forEach(j => paint(j, true, j===i));
     moves++; movesEl.textContent = pad(moves);
-    haptic(9); playTick();
+    haptic(HAP.tap); playTap(i, state[i]);
     if (FluxCore.isSolved(state, TARGET)) showWin();
     else saveProg();
   }
@@ -2407,14 +2453,14 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   let shareText = "";
   function showWin(){
     locked = true; stopTimer(); clearHint();
-    haptic([18,40,26]); playWin();
+    const onpar = moves <= par;
+    haptic(onpar ? HAP.winPar : HAP.win); playWin(onpar);
     tiles.forEach((t,i)=>{
       const r=Math.floor(i/cfg.size), c=i%cfg.size;
       t.style.animationDelay=((r+c)*45)+"ms";
       t.classList.add("wave");
       setTimeout(()=>{t.classList.remove("wave");t.style.animationDelay="";}, 800+(r+c)*45);
     });
-    const onpar = moves <= par;
     const tStr = fmtTime(elapsed);
     const share = $("winShare"), stats = $("winStats"), friends = $("winFriends");
 
@@ -2431,7 +2477,10 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     }
 
     if (ctx.type === "campaign"){
+      const wasComplete = tierComplete(ctx.tier);
       saveCampBest(ctx.tier, ctx.idx, { moves, par, time: tStr, timeMs: elapsed, onpar });
+      /* net de hele tier uitgespeeld → belonend flourish bovenop het win-geluid */
+      if (!wasComplete && tierComplete(ctx.tier)) setTimeout(()=>{ playTierComplete(); haptic(HAP.tierDone); }, 260);
       $("winShareBtn").style.display = "none";
       $("winTitle").textContent = onpar ? "On par!" : "Solved";
       $("winSub").textContent = FREE_DIFFS[ctx.tier].label + " · Puzzle " + (ctx.idx + 1) + " / " + CAMP_N;
@@ -2855,7 +2904,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     let done = false;
     function dive(){
       if (done) return; done = true;
-      try { haptic(12); } catch(e){}
+      try { haptic(HAP.dive); playDive(); } catch(e){}
       /* onboarding meteen onder het startscherm tonen, zodat het startscherm ernaartoe
          wegfadet en je nooit even de home eronder ziet flitsen */
       if (!store.get(ONBOARD_KEY, false)) startOnboarding();
