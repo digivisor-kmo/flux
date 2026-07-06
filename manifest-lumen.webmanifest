@@ -1,0 +1,16 @@
+{
+  "name": "FLUX",
+  "short_name": "FLUX",
+  "description": "Bring the board to a single color. A new puzzle every day.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05080F",
+  "theme_color": "#05080F",
+  "icons": [
+    { "src": "icon-lumen-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-lumen-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-lumen-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
