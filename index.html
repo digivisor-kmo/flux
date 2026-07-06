@@ -751,32 +751,33 @@
   @keyframes introFloat { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-8px); } }
 
   /* ============ home: CHOOSE YOUR DEPTH ============ */
-  .homehead { text-align: center; margin-top: 8px; }
-  .homehead .htitle { font: 200 25px/1 var(--font); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); text-shadow: 0 0 20px rgba(var(--c0-rgb),.3); }
-  .homehead .hsub { font: 400 10.5px/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--label); margin-top: 11px; }
-  #freeCards { margin-top: 26px !important; display: flex; flex-direction: column; gap: 12px; }
+  .homehead { text-align: center; margin-top: 4px; }
+  .homehead .htitle { font: 200 23px/1 var(--font); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); text-shadow: 0 0 20px rgba(var(--c0-rgb),.3); }
+  .homehead .hsub { font: 400 10px/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--label); margin-top: 9px; }
+  #freeCards { margin-top: 18px !important; display: flex; flex-direction: column; gap: 9px; }
   #scr-spelen .topbar { justify-content: center; position: relative; }
   #scr-spelen .topbar .helpcorner { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
   .sigil.compact { width: auto; }
 
-  /* tier-kaarten met orb-preview */
-  .tier { gap: 14px; padding: 13px 16px; }
+  /* tier-kaarten met orb-preview — compact zodat alle 5 op één scherm passen */
+  .tier { gap: 12px; padding: 9px 14px; }
+  .tier + .tier { margin-top: 0; }
   .tier .prev {
-    width: 52px; height: 52px; border-radius: 50%; flex: none; display: grid; place-items: center; position: relative;
+    width: 42px; height: 42px; border-radius: 50%; flex: none; display: grid; place-items: center; position: relative;
     background: radial-gradient(circle at 33% 28%, rgba(255,255,255,.22), rgba(8,14,32,.5) 64%);
     border: 1px solid var(--glas-rand);
     box-shadow: inset -3px -4px 8px rgba(0,0,20,.5), inset 2px 3px 6px rgba(255,255,255,.1);
   }
-  .tier .pgrid { display: grid; grid-template-columns: repeat(3, 7px); gap: 4px; }
-  .tier .pgrid i { width: 7px; height: 7px; display: block; }
+  .tier .pgrid { display: grid; grid-template-columns: repeat(3, 6px); gap: 3px; }
+  .tier .pgrid i { width: 6px; height: 6px; display: block; }
   .tier .pgrid i.p0 { background: var(--c0); clip-path: var(--morf0); filter: drop-shadow(0 0 3px rgba(var(--c0-rgb),.9)); }
   .tier .pgrid i.p1 { background: var(--c1); clip-path: var(--morf1); filter: drop-shadow(0 0 3px rgba(var(--c1-rgb),.9)); }
   .tier .pgrid i.p2 { background: var(--c2); clip-path: var(--morf2); filter: drop-shadow(0 0 3px rgba(var(--c2-rgb),.9)); }
   .tier .pgrid i.pe { opacity: 0; }
   .tier .tinfo { flex: 1; min-width: 0; }
-  .tier .tinfo h3 { font: 300 17px/1 var(--font); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); }
-  .tier .tinfo .k { margin-top: 7px; }
-  .tier .chev { flex: none; color: var(--muted); font: 300 22px/1 var(--font); opacity: 0.45; }
+  .tier .tinfo h3 { font: 300 15.5px/1 var(--font); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); }
+  .tier .tinfo .k { margin-top: 5px; }
+  .tier .chev { flex: none; color: var(--muted); font: 300 20px/1 var(--font); opacity: 0.45; }
 
   /* ============ tabbar: duidelijker ============ */
   .tabbar button { opacity: 0.55; padding: 6px 4px; }
@@ -2312,10 +2313,12 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       const fallback = (meta.name || meta.full_name || (session.user && session.user.email) || "").split(" ")[0].split("@")[0];
       $("userName").textContent = (myProfile && myProfile.name ? myProfile.name : fallback).split(" ")[0];
       $("addFriendFab").style.display = "";
+      $("inviteBtn").style.display = "";
     } else {
       box.style.display = "";
       $("userName").textContent = "";
       $("addFriendFab").style.display = "none";
+      $("inviteBtn").style.display = "none";
       box.innerHTML =
         '<div class="card"><span class="k">Account</span>' +
         '<h3>Play with friends</h3>' +
