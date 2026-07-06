@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>FLUX — gameplay sandbox</title>
+<style>
+  :root{ --bg:#0b1020; --panel:#131a30; --line:#243050; --ink:#e7edfb; --mut:#8a97b8;
+    --c0:#4DE3FF; --c1:#A78BFA; --c2:#FFB454; --c3:#4DE39A; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  body{margin:0; background:radial-gradient(120% 90% at 50% 0%, #101830, #070a15 70%); color:var(--ink);
+    font:15px/1.5 system-ui,sans-serif; min-height:100vh}
+  header{padding:16px 16px 6px; text-align:center}
+  header h1{margin:0; font-size:17px; letter-spacing:.14em; font-weight:600}
+  header p{margin:4px 0 0; color:var(--mut); font-size:12px}
+  .tabs{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; padding:12px 10px}
+  .tabs button{background:var(--panel); border:1px solid var(--line); color:var(--mut);
+    padding:8px 12px; border-radius:999px; font-size:12.5px; cursor:pointer}
+  .tabs button.on{color:#06122a; background:var(--c0); border-color:transparent; font-weight:600}
+  main{max-width:520px; margin:0 auto; padding:6px 16px 60px}
+  .note{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 14px;
+    color:var(--mut); font-size:12.5px; margin-bottom:16px}
+  .note b{color:var(--ink)}
+  .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px}
+  .controls label{font-size:12px; color:var(--mut); display:flex; align-items:center; gap:6px}
+  select,input[type=range]{accent-color:var(--c0)}
+  select{background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:6px 8px; font-size:13px}
+  .btn{background:var(--panel); border:1px solid var(--line); color:var(--ink); padding:8px 14px;
+    border-radius:10px; font-size:13px; cursor:pointer}
+  .btn.primary{background:var(--c0); color:#06122a; border-color:transparent; font-weight:600}
+  .wrap{display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap}
+  .board{display:grid; gap:8px; touch-action:manipulation}
+  .cell{aspect-ratio:1; border:none; border-radius:12%; cursor:pointer; position:relative;
+    display:flex; align-items:center; justify-content:center; font-size:20px; color:rgba(0,10,25,.55);
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.18), inset 0 2px 0 rgba(255,255,255,.15); transition:background .18s}
+  .cell.lock{background:#1a2136 !important; cursor:default; box-shadow:none; border:1px dashed #38456b}
+  .cell.lock::after{content:"✕"; color:#55638a; font-size:16px}
+  .mini{display:grid; gap:3px}
+  .mini i{width:16px; height:16px; border-radius:3px; display:block}
+  .status{margin-top:16px; font-size:13px; color:var(--mut); display:flex; gap:18px; flex-wrap:wrap; align-items:center}
+  .status b{color:var(--ink)}
+  .solved{color:var(--c3); font-weight:600}
+  .big{font-size:26px; font-weight:700; color:var(--ink)}
+  .goalcard{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; text-align:center}
+  .goalcard .k{font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--mut)}
+  .brushprev{display:grid; grid-template-columns:repeat(5,14px); gap:3px; margin-top:8px}
+  .brushprev i{width:14px;height:14px;border-radius:3px;background:#1c2540}
+  .brushprev i.on{background:var(--c0)} .brushprev i.c{background:var(--c2)}
+  .stagepill{display:inline-block; background:rgba(77,227,255,.15); color:var(--c0); border:1px solid rgba(77,227,255,.4);
+    padding:3px 10px; border-radius:999px; font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1>FLUX · GAMEPLAY SANDBOX</h1>
+  <p>Zelfde regel, andere knoppen. Tik een cel, voel de variant.</p>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<main>
+  <div class="note" id="note"></div>
+  <div class="controls" id="controls"></div>
+  <div class="wrap">
+    <div>
+      <div class="board" id="board"></div>
+      <div class="status" id="status"></div>
+    </div>
+    <div id="side"></div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const PAL = ['#4DE3FF','#A78BFA','#FFB454','#4DE39A'];
+const SYM = ['▲','◆','●','★'];
+
+/* ---- kwastvormen: elke cel = [dr, dc, hoeveelheid] ---- */
+const BRUSHES = {
+  plus:   {name:'Plus (+)',            cells:[[0,0,1],[-1,0,1],[1,0,1],[0,-1,1],[0,1,1]]},
+  x:      {name:'X (diagonaal)',       cells:[[0,0,1],[-1,-1,1],[-1,1,1],[1,-1,1],[1,1,1]]},
+  star:   {name:'Ster (+ en X)',       cells:[[0,0,1],[-1,0,1],[1,0,1],[0,-1,1],[0,1,1],[-1,-1,1],[-1,1,1],[1,-1,1],[1,1,1]]},
+  knight: {name:'Paardensprong',       cells:[[0,0,1],[-2,-1,1],[-2,1,1],[2,-1,1],[2,1,1],[-1,-2,1],[1,-2,1],[-1,2,1],[1,2,1]]},
+  weighted:{name:'Gewogen (kern ×2)',  cells:[[0,0,2],[-1,0,1],[1,0,1],[0,-1,1],[0,1,1]]},
+  asym:   {name:'Asymmetrisch (L)',    cells:[[0,0,1],[-1,0,1],[0,1,1],[1,1,1]]},
+};
+
+function applyTap(st, i, N, S, brush, locked){
+  const r = Math.floor(i/N), c = i%N;
+  for (const [dr,dc,amt] of brush.cells){
+    const rr = r+dr, cc = c+dc;
+    if (rr<0||rr>=N||cc<0||cc>=N) continue;
+    const k = rr*N+cc;
+    if (locked && locked.has(k)) continue;
+    st[k] = (st[k] + amt) % S;
+  }
+}
+function isSolved(st, target, locked){
+  for (let i=0;i<st.length;i++){ if (locked && locked.has(i)) continue; if (st[i] !== target[i]) return false; }
+  return true;
+}
+function scramble(N,S,brush,locked,target,k){
+  const st = target.slice();
+  const src = [...Array(N*N).keys()].filter(i => !(locked && locked.has(i)));
+  for (let t=0;t<k;t++){ applyTap(st, src[(Math.random()*src.length)|0], N, S, brush, locked); }
+  return st;
+}
+
+/* ---- huidige game-toestand ---- */
+let G = null, timer = null;
+
+function newPuzzle(){
+  let st;
+  do { st = scramble(G.N, G.S, G.brush, G.locked, G.target0, G.k); } while (isSolved(st, G.target0, G.locked));
+  G.st = st; G.moves = 0; G.done = false;
+  if (G.stages){ G.stage = 0; G.target = G.stages[0]; } else { G.target = G.target0; }
+  draw();
+}
+
+function draw(){
+  const b = $("board");
+  b.style.gridTemplateColumns = `repeat(${G.N}, 1fr)`;
+  b.style.width = Math.min(360, G.N*64) + "px";
+  let html = "";
+  for (let i=0;i<G.N*G.N;i++){
+    if (G.locked && G.locked.has(i)){ html += `<div class="cell lock"></div>`; continue; }
+    const s = G.st[i];
+    html += `<button class="cell" data-i="${i}" style="background:${PAL[s]}">${SYM[s]}</button>`;
+  }
+  b.innerHTML = html;
+  b.querySelectorAll(".cell:not(.lock)").forEach(el => el.addEventListener("click", ()=>tap(+el.dataset.i)));
+
+  // status
+  let s = `<span>Zetten <b>${G.moves}</b></span>`;
+  if (G.mode === "time"){ s += `<span>Tijd <b id="clock">${G.time}s</b></span><span>Opgelost <b>${G.score||0}</b></span>`; }
+  if (G.stages){ s += `<span class="stagepill">Stap ${G.stage+1}/${G.stages.length}</span>`; }
+  if (G.done && G.mode !== "time" && G.mode !== "zen") s += `<span class="solved">✓ Opgelost in ${G.moves} zetten</span>`;
+  if (G.done && G.mode === "zen") s += `<span class="solved">✓ Mooi. Volgende komt eraan…</span>`;
+  $("status").innerHTML = s;
+
+  // zijkant: doel-preview
+  const side = $("side");
+  if (G.showGoal){
+    side.innerHTML = `<div class="goalcard"><div class="k">Doelpatroon</div>${miniGrid(G.target, G.N)}</div>`;
+  } else side.innerHTML = "";
+}
+
+function miniGrid(target, N){
+  let h = `<div class="mini" style="grid-template-columns:repeat(${N},16px); margin-top:8px">`;
+  for (let i=0;i<N*N;i++){ const lk = G.locked && G.locked.has(i); h += `<i style="background:${lk?'#1a2136':PAL[target[i]]}"></i>`; }
+  return h + "</div>";
+}
+
+function tap(i){
+  if (G.done && G.mode !== "zen") return;
+  applyTap(G.st, i, G.N, G.S, G.brush, G.locked);
+  G.moves++;
+  if (isSolved(G.st, G.target, G.locked)){
+    // meerstaps: volgende doel, bord blijft staan
+    if (G.stages && G.stage < G.stages.length-1){ G.stage++; G.target = G.stages[G.stage]; draw(); return; }
+    onSolved();
+  }
+  draw();
+}
+
+function onSolved(){
+  G.done = true;
+  if (G.mode === "time"){ G.score = (G.score||0)+1; newPuzzle(); return; }
+  if (G.mode === "zen"){ draw(); setTimeout(newPuzzle, 900); return; }
+}
+
+/* ================= tabs ================= */
+const TABS = [
+  { id:"brush", label:"Kwastvormen", note:"<b>Kwastvormen.</b> Wat verandert een tik? Kies een vorm en voel hoe de puzzel compleet anders speelt — dezelfde regel, andere knop. Dit is de SmartGames-hefboom: per campagne-wereld een eigen kwast.",
+    build(){
+      G = { N:5, S:3, brush:BRUSHES.plus, locked:null, k:6, target0:zeros(25), mode:"std", showGoal:false };
+      ctrl(`<label>Kwast <select id="bsel"></select></label>` + brushPrev() + newBtn());
+      const sel = $("bsel"); Object.keys(BRUSHES).forEach(key=> sel.add(new Option(BRUSHES[key].name, key)));
+      sel.onchange = ()=>{ G.brush = BRUSHES[sel.value]; updBrushPrev(); newPuzzle(); };
+      newPuzzle();
+    }},
+
+  { id:"lock", label:"Gedoofde cellen", note:"<b>Gedoofde cellen.</b> Vaste muren (✕) die niet mee veranderen en die je niet kan tikken. Ze breken de symmetrie en maken puzzels pittiger. Schuif het aantal op.",
+    build(){
+      G = { N:5, S:3, brush:BRUSHES.plus, locked:new Set(), k:6, target0:zeros(25), mode:"std", showGoal:false };
+      ctrl(`<label>Gedoofd <input type="range" id="lk" min="0" max="8" value="4"><b id="lkv">4</b></label>` + newBtn());
+      const set = ()=>{ const m=+$("lk").value; $("lkv").textContent=m; G.locked = randSet(25, m); newPuzzle(); };
+      $("lk").oninput = set; set();
+    }},
+
+  { id:"four", label:"4e kleur", note:"<b>Vierde kleur (Wizard).</b> Cyclus van 4 i.p.v. 3. Meer diepte, maar let op: 4 is niet priem, dus de <i>goedkope</i> par-engine (lineair over GF(S)) werkt niet meer. Voor eerlijke par zou je S priem houden (2/3) of par anders berekenen.",
+    build(){
+      G = { N:5, S:4, brush:BRUSHES.plus, locked:null, k:7, target0:zeros(25), mode:"std", showGoal:false };
+      ctrl(newBtn());
+      newPuzzle();
+    }},
+
+  { id:"target", label:"Doelpatroon", note:"<b>Van patroon A naar B.</b> Doel is niet 'alles één kleur', maar een specifiek patroon (rechts). Zelfde mechaniek, heel andere puzzel. Kies een doel.",
+    build(){
+      const N=5;
+      G = { N, S:3, brush:BRUSHES.plus, locked:null, k:6, target0:checker(N), mode:"std", showGoal:true };
+      ctrl(`<label>Doel <select id="tg"><option value="checker">Schaakbord</option><option value="border">Rand</option><option value="cross">Kruis</option></select></label>` + newBtn());
+      $("tg").onchange = ()=>{ const v=$("tg").value; G.target0 = v==="checker"?checker(N): v==="border"?border(N):crossPat(N); newPuzzle(); };
+      newPuzzle();
+    }},
+
+  { id:"time", label:"Time-challenge", note:"<b>Time-challenge.</b> Klok van 60 seconden, los zoveel mogelijk kleine puzzels op. Elke oplossing = nieuwe puzzel. Racen tegen de tijd.",
+    build(){
+      G = { N:3, S:2, brush:BRUSHES.plus, locked:null, k:4, target0:zeros(9), mode:"time", time:60, score:0, showGoal:false };
+      ctrl(`<button class="btn primary" id="start">Start 60s</button>`);
+      $("start").onclick = startTime;
+      newPuzzle();
+    }},
+
+  { id:"zen", label:"Zen", note:"<b>Zen-modus.</b> Geen klok, geen par, geen druk. Los op, en de volgende verschijnt vanzelf. Puur voor de flow.",
+    build(){
+      G = { N:5, S:3, brush:BRUSHES.plus, locked:null, k:5, target0:zeros(25), mode:"zen", showGoal:false };
+      ctrl(newBtn("Andere puzzel"));
+      newPuzzle();
+    }},
+
+  { id:"boss", label:"Boss (meerstaps)", note:"<b>Boss-puzzel.</b> Groter bord, ster-kwast, wat muren — én meerstaps: bereik eerst patroon 1, dan patroon 2, vanuit waar je staat. Voelt als een weekly-uitdaging.",
+    build(){
+      const N=6, S=3;
+      const locked = new Set([14,21]);
+      const A = crossPat(N);
+      // B is A + enkele tikken → gegarandeerd bereikbaar vanuit A (dus de hele keten is oplosbaar)
+      const B = A.slice();
+      [7,10,28,31].forEach(i => applyTap(B, i, N, S, BRUSHES.star, locked));
+      G = { N, S, brush:BRUSHES.star, locked, k:9, target0:A, mode:"std", stages:[A,B], showGoal:false };
+      ctrl(newBtn());
+      newPuzzle();
+      $("side").innerHTML = `<div class="goalcard"><div class="k">Stap 1</div>${miniGrid(A,N)}</div>
+        <div class="goalcard" style="margin-top:10px"><div class="k">Stap 2</div>${miniGrid(B,N)}</div>`;
+    }},
+];
+
+/* ---- helpers ---- */
+function zeros(n){ return new Array(n).fill(0); }
+function checker(N){ const a=[]; for(let r=0;r<N;r++)for(let c=0;c<N;c++)a.push((r+c)%2? 1:0); return a; }
+function border(N){ const a=[]; for(let r=0;r<N;r++)for(let c=0;c<N;c++)a.push((r===0||c===0||r===N-1||c===N-1)?2:0); return a; }
+function crossPat(N){ const a=[]; const m=(N-1)/2|0; for(let r=0;r<N;r++)for(let c=0;c<N;c++)a.push((r===Math.floor(N/2)||c===Math.floor(N/2))?1:0); return a; }
+function randSet(n, m){ const s=new Set(); while(s.size<m){ s.add((Math.random()*n)|0); } return s; }
+
+function ctrl(html){ $("controls").innerHTML = html; }
+function newBtn(label){ return `<button class="btn primary" id="newp">${label||"Nieuwe puzzel"}</button>`; }
+function brushPrev(){ return `<span class="brushprev" id="bp"></span>`; }
+function updBrushPrev(){
+  const bp = $("bp"); if(!bp) return;
+  const cells = new Map(); G.brush.cells.forEach(([dr,dc,amt])=> cells.set((dr+2)*5+(dc+2), amt));
+  let h=""; for(let r=-2;r<=2;r++)for(let c=-2;c<=2;c++){ const a=cells.get((r+2)*5+(c+2)); h+=`<i class="${a?(a>1?'c':'on'):''}"></i>`; }
+  bp.innerHTML = h;
+}
+function startTime(){
+  clearInterval(timer); G.score=0; G.time=60; newPuzzle();
+  $("start").textContent = "Bezig…"; $("start").disabled = true;
+  timer = setInterval(()=>{
+    G.time--; const cl=$("clock"); if(cl) cl.textContent = G.time+"s";
+    if (G.time<=0){ clearInterval(timer); G.done=true;
+      $("board").innerHTML = `<div class="big" style="padding:30px 10px">⏱ Tijd! ${G.score} opgelost</div>`;
+      $("start").textContent = "Opnieuw"; $("start").disabled=false;
+    }
+  }, 1000);
+}
+
+/* ---- tab-router ---- */
+function openTab(t){
+  clearInterval(timer);
+  $("tabs").querySelectorAll("button").forEach(b=> b.classList.toggle("on", b.dataset.t===t.id));
+  $("note").innerHTML = t.note;
+  $("side").innerHTML = "";
+  t.build();
+  if (t.id==="brush") updBrushPrev();
+  // (her)bind de "nieuwe puzzel"-knop indien aanwezig
+  const np = $("newp"); if (np) np.onclick = newPuzzle;
+}
+TABS.forEach(t=>{ const b=document.createElement("button"); b.textContent=t.label; b.dataset.t=t.id; b.onclick=()=>openTab(t); $("tabs").appendChild(b); });
+openTab(TABS[0]);
+</script>
+</body>
+</html>
