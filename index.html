@@ -1513,14 +1513,15 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   /* Puzzelset-versie: bij een nieuwe gecureerde set wissen we de oude lokale voortgang
      (de borden achter de indexen zijn veranderd, dus oude bests slaan nergens meer op). */
   const CAMP_VER = 2;
-  (function campVersionReset(){
+  /* NB: wordt bij het opstarten aangeroepen (na de store-helper), niet meteen bij definitie. */
+  function campVersionReset(){
     if (store.get("flux-camp-ver", 1) !== CAMP_VER){
       TIER_ORDER.forEach(t => { for (let i = 0; i < CAMP_N; i++) store.del(campKey(t, i)); });
       store.del("flux-camp-dirty"); store.del("flux-camp-seeded");
       store.set("flux-camp-ver", CAMP_VER);
       store.set("flux-camp-wipe-remote", true);   /* ook de eigen server-rijen wissen zodra ingelogd */
     }
-  })();
+  }
   async function campWipeRemote(){
     if (!(sb && session) || !store.get("flux-camp-wipe-remote", false)) return;
     try { const { error } = await sb.from("campaign_progress").delete().gte("idx", 0); if (!error) store.del("flux-camp-wipe-remote"); } catch(e){}
@@ -2819,6 +2820,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     sb.auth.getSession().then(({ data }) => { if (data && data.session && !session) applySession(data.session); });
   }
 
+  campVersionReset();   /* oude campagne-voortgang wissen bij een nieuwe puzzelset-versie (na store) */
   setMode(mode);
   applySettingsUI();
   renderAuth();
