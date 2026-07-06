@@ -818,7 +818,8 @@
   .frow .result .rpar.good { color: var(--c0); text-shadow: 0 0 10px rgba(var(--c0-rgb),.4); }
   .frow .result .rtime { font: 500 13px/1 var(--mono); color: var(--ink); }
   .frow .result.pending { display: block; font: 500 9px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--label); }
-  .btn.invite { display: block; width: 100%; margin: 6px 0 22px; text-align: center; }
+  .btn.invite { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin: 6px 0 22px; }
+  .btn.invite svg { width: 19px; height: 19px; filter: drop-shadow(0 0 5px rgba(var(--c0-rgb),.5)); }
 
   /* ============ onboarding (how-to voor nieuwe spelers) ============ */
   #onboard {
@@ -973,7 +974,10 @@
 
       <div id="authBox"></div>
 
-      <button class="btn invite" id="inviteBtn">+ Invite a light</button>
+      <button class="btn invite" id="inviteBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.6"/><path d="M3 20c.7-3.4 3.2-5.4 6-5.4s5.3 2 6 5.4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>
+        <span>Invite a friend</span>
+      </button>
 
       <div id="ranking"></div>
 
