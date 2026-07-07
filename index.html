@@ -1578,7 +1578,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     } catch(e){ /* offline of fout: later opnieuw */ }
     finally { campSyncing = false; }
   }
-  window.addEventListener("online", campSync);
+  window.addEventListener("online", ()=>{ campSync(); flushDailyPending(); });
 
   const randInt = n => Math.floor(Math.random() * n);
   /* genereer een gegarandeerd oplosbare Numbers-puzzel: scramble vanuit alles-groen.
@@ -2658,6 +2658,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   document.addEventListener("visibilitychange", ()=>{
     if (document.visibilityState === "hidden"){ saveProg(); return; }
     campSync();                 /* terug in de app: campagne-voortgang stil bijwerken */
+    flushDailyPending();        /* en een niet-gesynct daily-resultaat alsnog insturen */
     /* teruggekeerd na middernacht terwijl de app open bleef: nieuwe dag oppikken,
        maar niet midden in een lopend potje het bord onder je uit trekken */
     const now = dayKeyNow();
@@ -2778,17 +2779,30 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   }
 
   /* oplossing serverside laten verifiëren; de client wordt nooit vertrouwd */
-  async function submitDaily(attempts){
-    if (!(sb && session)) return;
+  /* Een afgeronde daily mag NOOIT geruisloos verloren gaan: we leggen de inzending lokaal vast
+     en blijven ze op de achtergrond opnieuw proberen tot de server ze bevestigt. */
+  const DAILY_PEND = "flux-daily-pending";
+  function saveDailyPending(attempts){
+    store.set(DAILY_PEND, { day: todayKey, taps: dailyTaps.slice(), elapsedMs: elapsed, hints: hintsUsed, attempts });
+  }
+  let dailyFlushing = false;
+  async function flushDailyPending(){
+    const p = store.get(DAILY_PEND, null);
+    if (!p) return;
+    if (p.day !== dayKeyNow()){ store.del(DAILY_PEND); return; }   /* dag voorbij → niet meer inzendbaar */
+    if (!(sb && session) || !navigator.onLine || dailyFlushing) return;
+    dailyFlushing = true;
     try {
       const { data, error } = await sb.functions.invoke("submit-daily", {
-        body: { day: todayKey, taps: dailyTaps, elapsedMs: elapsed, hints: hintsUsed, attempts }
+        body: { day: p.day, taps: p.taps, elapsedMs: p.elapsedMs, hints: p.hints, attempts: p.attempts }
       });
-      if (!error && data && data.ok){
-        await syncFromServer();
-        refreshRanking();
-      }
-    } catch(e){ /* offline: lokaal resultaat blijft staan */ }
+      if (!error && data && data.ok){ store.del(DAILY_PEND); await syncFromServer(); refreshRanking(); refreshVandaag(); }
+    } catch(e){ /* nog niet gelukt → blijft staan, later automatisch opnieuw */ }
+    finally { dailyFlushing = false; }
+  }
+  async function submitDaily(attempts){
+    saveDailyPending(attempts);   /* eerst lokaal vastleggen zodat het nooit verloren gaat */
+    await flushDailyPending();    /* meteen proberen; lukt het niet, dan later vanzelf opnieuw */
   }
 
   async function applySession(s){
@@ -2801,6 +2815,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       renderAuth();               /* naam + vriendencode invullen zodra profiel binnen is */
       await syncFromServer();
       campSync();                 /* campagne-voortgang op de achtergrond koppelen aan het account */
+      flushDailyPending();        /* nog niet-gesynct daily-resultaat alsnog insturen */
     }
     refreshVandaag();
   }
