@@ -2515,9 +2515,18 @@ if (typeof module !== "undefined") module.exports = FluxCore;
     else { x.shadowColor = "rgba(255,180,84,0.5)"; x.fillStyle = "#FFB454"; x.font = "200 58px Outfit, system-ui, sans-serif"; x.fillText("+" + (d.moves - d.par) + " OVER PAR", cx, 706); }
     try{x.letterSpacing="0px";}catch(e){} x.restore();
     x.fillStyle = "#9FB0C8"; x.font = "300 34px Outfit, system-ui, sans-serif"; x.fillText(d.moves + " moves   ·   par " + d.par, cx, 772);
-    x.fillStyle = "#EAF2FF"; x.font = "500 42px 'JetBrains Mono', ui-monospace, monospace";
-    x.fillText("⏱ " + d.time + (d.streak > 0 ? "     🔥 " + d.streak : ""), cx, 852);
-    x.fillStyle = "#4A5A72"; x.font = "500 26px 'JetBrains Mono', ui-monospace, monospace"; x.fillText("flux · one rule, every day", cx, 1002);
+    /* tijd + streak met getekende iconen (geen emoji → op elk toestel betrouwbaar) */
+    const drawClock = (ix, iy, r, color) => { x.save(); x.strokeStyle = color; x.lineWidth = 4; x.lineCap = "round";
+      x.beginPath(); x.arc(ix, iy, r, 0, 7); x.stroke();
+      x.beginPath(); x.moveTo(ix, iy); x.lineTo(ix, iy - r * 0.55); x.moveTo(ix, iy); x.lineTo(ix + r * 0.42, iy + r * 0.12); x.stroke(); x.restore(); };
+    const drawFlame = (ix, iy, s, color) => { x.save(); x.fillStyle = color; x.shadowColor = color; x.shadowBlur = 14;
+      x.beginPath(); x.moveTo(ix, iy - s); x.bezierCurveTo(ix + s, iy - s * 0.1, ix + s * 0.55, iy + s, ix, iy + s);
+      x.bezierCurveTo(ix - s * 0.55, iy + s, ix - s, iy - s * 0.1, ix, iy - s); x.closePath(); x.fill(); x.restore(); };
+    const iconLine = (yy, drawIcon, iconW, text, fnt, fill) => { x.font = fnt; const tw = x.measureText(text).width, gap = 14, total = iconW + gap + tw, left = cx - total / 2;
+      drawIcon(left + iconW / 2, yy); x.save(); x.textAlign = "left"; x.fillStyle = fill; x.fillText(text, left + iconW + gap, yy); x.restore(); };
+    iconLine(852, (ix, iy) => drawClock(ix, iy, 19, "#9FB0C8"), 42, d.time, "500 44px 'JetBrains Mono', ui-monospace, monospace", "#EAF2FF");
+    if (d.streak > 0) iconLine(922, (ix, iy) => drawFlame(ix, iy, 18, "#FFB454"), 34, d.streak + " DAY STREAK", "500 26px 'JetBrains Mono', ui-monospace, monospace", "#FFB454");
+    x.fillStyle = "#4A5A72"; x.font = "500 26px 'JetBrains Mono', ui-monospace, monospace"; x.fillText("flux · one rule, every day", cx, 1006);
     return cv;
   }
 
