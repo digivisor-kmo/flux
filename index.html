@@ -597,6 +597,9 @@
   .delactions .btn { flex: 1; }
   .win p { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
   .win .share { display: grid; gap: 5px; margin-bottom: 20px; }
+  #winShare { display: block; }
+  .sharecv { width: 190px; max-width: 62%; display: block; margin: 2px auto 10px; border-radius: 14px;
+    box-shadow: 0 10px 26px rgba(0,0,0,.55); border: 1px solid var(--glas-rand); }
   .win .share i { width: 15px; height: 15px; border-radius: 50%; display: block; position: relative;
     background: rgba(10,16,34,.6); box-shadow: inset 0 0 0 1px rgba(200,235,255,.16); }
   .win .actions { display: flex; gap: 10px; }
@@ -2458,7 +2461,86 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   }
 
   /* ================= win ================= */
-  let shareText = "";
+  let shareText = "", shareCanvas = null;
+  const dailyNumber = day => Math.floor((Date.parse(day) - Date.parse("2025-06-01")) / 86400000) + 1;
+  const shareDateStr = () => new Date().toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short" }).toUpperCase();
+
+  /* spoilervrij deelbeeld: toont je prestatie (zetten t.o.v. par + tijd), niet de oplossing */
+  function buildDailyShare(d){
+    const cap = Math.min(d.moves, 12);
+    let trail = ""; for (let i = 0; i < cap; i++) trail += (d.onpar || i < d.par) ? "🟦" : "🟧";
+    const parTag = d.onpar ? "on par" : "+" + (d.moves - d.par) + " over par";
+    shareText = GAME_NAME + " Daily №" + d.num + "\n" + trail + "\n" +
+      d.moves + " moves · par " + d.par + " · " + parTag + " · ⏱ " + d.time +
+      (d.streak > 0 ? " · 🔥 " + d.streak : "") + "\n" + APP_URL;
+    try {
+      shareCanvas = renderShareCanvas(d);
+      const prev = $("winShare");
+      prev.innerHTML = ""; prev.setAttribute("aria-hidden", "false"); prev.style.display = "block";
+      shareCanvas.className = "sharecv";
+      prev.appendChild(shareCanvas);
+    } catch(e){ shareCanvas = null; }
+  }
+
+  function renderShareCanvas(d){
+    const W = 1080, H = 1080, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const x = cv.getContext("2d"); const cx = W / 2;
+    let g = x.createRadialGradient(cx, H * 0.08, 40, cx, H * 0.08, W * 1.15);
+    g.addColorStop(0, "#0C1730"); g.addColorStop(0.62, "#070c18"); g.addColorStop(1, "#05080F");
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const blob = (bx, by, r, rgb, a) => { const gg = x.createRadialGradient(bx, by, 0, bx, by, r);
+      gg.addColorStop(0, "rgba(" + rgb + "," + a + ")"); gg.addColorStop(1, "rgba(" + rgb + ",0)"); x.fillStyle = gg; x.fillRect(0, 0, W, H); };
+    blob(230, 300, 520, "77,227,255", 0.10); blob(870, 900, 560, "167,139,250", 0.09);
+    const vg = x.createRadialGradient(cx, H / 2, H * 0.34, cx, H / 2, H * 0.78);
+    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.55)"); x.fillStyle = vg; x.fillRect(0, 0, W, H);
+    x.textAlign = "center"; x.textBaseline = "middle";
+    const glow = (fn, color, blur) => { x.save(); x.shadowColor = color; x.shadowBlur = blur || 24; x.fillStyle = color; fn(); x.restore(); };
+    const sy = 250;
+    x.strokeStyle = "rgba(200,235,255,0.3)"; x.lineWidth = 3; x.beginPath(); x.moveTo(cx - 95, sy); x.lineTo(cx + 95, sy); x.stroke();
+    glow(() => { x.beginPath(); x.moveTo(cx - 70, sy - 17); x.lineTo(cx - 53, sy + 14); x.lineTo(cx - 87, sy + 14); x.closePath(); x.fill(); }, "#4DE3FF");
+    glow(() => { x.save(); x.translate(cx, sy); x.rotate(Math.PI / 4); x.fillRect(-13, -13, 26, 26); x.restore(); }, "#A78BFA");
+    glow(() => { x.beginPath(); x.arc(cx + 70, sy, 15, 0, 7); x.fill(); }, "#FFB454");
+    x.save(); x.shadowColor = "rgba(77,227,255,0.5)"; x.shadowBlur = 30; x.fillStyle = "#EAF2FF";
+    try { x.letterSpacing = "26px"; } catch(e){}
+    x.font = "200 88px Outfit, system-ui, sans-serif"; x.fillText(GAME_NAME, cx + 13, 362);
+    try { x.letterSpacing = "0px"; } catch(e){} x.restore();
+    x.fillStyle = "#6a7a95"; x.font = "500 28px 'JetBrains Mono', ui-monospace, monospace";
+    x.fillText("DAILY №" + d.num + "   ·   " + d.dateStr, cx, 432);
+    const dots = Math.min(d.moves, 12), step = dots > 8 ? 60 : 74, R = dots > 8 ? 24 : 30;
+    let dx = cx - (dots - 1) * step / 2; const dy = 560;
+    for (let i = 0; i < dots; i++){ const col = (d.onpar || i < d.par) ? "#4DE3FF" : "#FFB454";
+      x.save(); x.shadowColor = col; x.shadowBlur = 26; x.fillStyle = col; x.beginPath(); x.arc(dx, dy, R, 0, 7); x.fill(); x.restore(); dx += step; }
+    x.save(); x.shadowBlur = 22;
+    if (d.onpar){ x.shadowColor = "rgba(77,227,255,0.55)"; x.fillStyle = "#4DE3FF"; x.font = "200 68px Outfit, system-ui, sans-serif"; try{x.letterSpacing="6px";}catch(e){} x.fillText("ON PAR", cx, 706); }
+    else { x.shadowColor = "rgba(255,180,84,0.5)"; x.fillStyle = "#FFB454"; x.font = "200 58px Outfit, system-ui, sans-serif"; x.fillText("+" + (d.moves - d.par) + " OVER PAR", cx, 706); }
+    try{x.letterSpacing="0px";}catch(e){} x.restore();
+    x.fillStyle = "#9FB0C8"; x.font = "300 34px Outfit, system-ui, sans-serif"; x.fillText(d.moves + " moves   ·   par " + d.par, cx, 772);
+    /* tijd + streak met getekende iconen (geen emoji → op elk toestel betrouwbaar) */
+    const drawClock = (ix, iy, r, color) => { x.save(); x.strokeStyle = color; x.lineWidth = 4; x.lineCap = "round";
+      x.beginPath(); x.arc(ix, iy, r, 0, 7); x.stroke();
+      x.beginPath(); x.moveTo(ix, iy); x.lineTo(ix, iy - r * 0.55); x.moveTo(ix, iy); x.lineTo(ix + r * 0.42, iy + r * 0.12); x.stroke(); x.restore(); };
+    const drawFlame = (ix, iy, s, color) => { x.save(); x.fillStyle = color; x.shadowColor = color; x.shadowBlur = 14;
+      x.beginPath(); x.moveTo(ix, iy - s); x.bezierCurveTo(ix + s, iy - s * 0.1, ix + s * 0.55, iy + s, ix, iy + s);
+      x.bezierCurveTo(ix - s * 0.55, iy + s, ix - s, iy - s * 0.1, ix, iy - s); x.closePath(); x.fill(); x.restore(); };
+    const iconLine = (yy, drawIcon, iconW, text, fnt, fill) => { x.font = fnt; const tw = x.measureText(text).width, gap = 14, total = iconW + gap + tw, left = cx - total / 2;
+      drawIcon(left + iconW / 2, yy); x.save(); x.textAlign = "left"; x.fillStyle = fill; x.fillText(text, left + iconW + gap, yy); x.restore(); };
+    iconLine(852, (ix, iy) => drawClock(ix, iy, 19, "#9FB0C8"), 42, d.time, "500 44px 'JetBrains Mono', ui-monospace, monospace", "#EAF2FF");
+    if (d.streak > 0) iconLine(922, (ix, iy) => drawFlame(ix, iy, 18, "#FFB454"), 34, d.streak + " DAY STREAK", "500 26px 'JetBrains Mono', ui-monospace, monospace", "#FFB454");
+    x.fillStyle = "#4A5A72"; x.font = "500 26px 'JetBrains Mono', ui-monospace, monospace"; x.fillText("flux · one rule, every day", cx, 1006);
+    return cv;
+  }
+
+  async function shareDaily(){
+    if (shareCanvas && navigator.canShare){
+      try {
+        const blob = await new Promise(res => shareCanvas.toBlob(res, "image/png"));
+        if (blob){ const file = new File([blob], "flux-daily.png", { type: "image/png" });
+          if (navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], text: shareText, title: GAME_NAME }); return; } }
+      } catch(e){ if (e && e.name === "AbortError") return; }
+    }
+    if (navigator.share){ try { await navigator.share({ title: GAME_NAME, text: shareText }); return; } catch(e){ if (e && e.name === "AbortError") return; } }
+    try { await navigator.clipboard.writeText(shareText); const b = $("winShareBtn"), o = b.textContent; b.textContent = "Copied!"; setTimeout(() => { b.textContent = o; }, 1600); } catch(e){}
+  }
   function showWin(){
     locked = true; stopTimer(); clearHint();
     const onpar = moves <= par;
@@ -2521,13 +2603,8 @@ if (typeof module !== "undefined") module.exports = FluxCore;
       });
       stats.style.display = "flex"; friends.style.display = "block"; share.style.display = "none";
 
-      /* spoilervrij deelbeeld: enkel je prestatie, niet de oplossing */
-      const parTag = onpar ? "on par ✓" : "+" + (moves - par) + " over par";
-      const streak = store.get("flux-streak", 0);
-      shareText = GAME_NAME + " Sprint · " + todayKey.slice(8) + "/" + todayKey.slice(5,7) + "\n" +
-        "⏱ " + tStr + " · " + moves + " moves (par " + par + ") · " + parTag + "\n" +
-        (streak > 0 ? "🔥 " + streak + " day streak\n" : "") +
-        APP_URL;
+      /* spoilervrij deelbeeld ("lichtspoor"): afbeelding + emoji-tekst */
+      buildDailyShare({ num: dailyNumber(todayKey), dateStr: shareDateStr(), moves, par, onpar, time: tStr, streak: store.get("flux-streak", 0) });
       $("winShareBtn").style.display = "";
     } else {
       $("winShareBtn").style.display = "none";
@@ -2574,19 +2651,7 @@ if (typeof module !== "undefined") module.exports = FluxCore;
   $("levelsBack").addEventListener("click", ()=>{ buildTiers(); show("spelen"); });
   $("campStatClose").addEventListener("click", closeSheets);
   $("campStatPlay").addEventListener("click", ()=>{ closeSheets(); startGame({ type: "campaign", tier: campStatSel.tier, idx: campStatSel.idx }); });
-  $("winShareBtn").addEventListener("click", async ()=>{
-    if (!shareText) return;
-    if (navigator.share){
-      try { await navigator.share({ title: GAME_NAME, text: shareText }); return; }
-      catch(e){ if (e && e.name === "AbortError") return; }   /* gebruiker annuleerde: niets doen */
-    }
-    try {
-      await navigator.clipboard.writeText(shareText);
-      const b = $("winShareBtn"), o = b.textContent;
-      b.textContent = "Copied!";
-      setTimeout(()=>{ b.textContent = o; }, 1600);
-    } catch(e){}
-  });
+  $("winShareBtn").addEventListener("click", ()=>{ if (shareText) shareDaily(); });
   $("resetBtn").addEventListener("click", reset);
   $("hintIconBtn").addEventListener("click", showHint);
   $("newBtn").addEventListener("click", newFreePuzzle);
