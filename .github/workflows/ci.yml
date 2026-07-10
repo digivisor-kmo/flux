@@ -1,0 +1,45 @@
+# FLUX CI: elke push wordt volledig getest; alleen groene code bereikt main (en dus Vercel).
+#
+# Werkwijze:
+#   - dagelijks werk pusht naar de branch `dev`
+#   - deze workflow draait de volledige testsuite (unit + integratie + deploy-check)
+#   - alleen als ALLES groen is, wordt main fast-forward naar dev gezet
+#   - Vercel deployt automatisch bij elke update van main
+# Een kapotte versie kan zo nooit live komen.
+name: CI
+on:
+  push:
+    branches: [dev, main]
+permissions:
+  contents: write
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  test:
+    name: Testsuite (unit + integratie + deploy-check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - name: Testdependencies installeren
+        run: npm ci --prefix tests
+      - name: Volledige testsuite
+        run: npm test --prefix tests
+      - name: Deploy-vangnet
+        run: node deploy-check.js index.html
+  promote:
+    name: Groen → main (Vercel deployt)
+    needs: test
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: main fast-forward naar geteste dev
+        run: git push origin HEAD:main
