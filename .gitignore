@@ -1,2 +1,4 @@
 .DS_Store
 .git-credentials
+tests/node_modules/
+tests/fixtures/.parity-runner.ts

@@ -1,0 +1,11 @@
+{
+  "name": "flux-tests",
+  "private": true,
+  "description": "FLUX testsuite: unit (spellogica) + integratie (UI-flows in jsdom). Bewust in een submap: de repo-root blijft zonder package.json zodat Vercel puur statisch deployt.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}
